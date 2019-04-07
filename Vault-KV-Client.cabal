@@ -1,0 +1,38 @@
+name:                Vault-KV-Client
+version:             0.1.0
+synopsis:            A Haskell client library for the Hashicorp Vault
+description:         A Haskell client library for the Hashicorp Vault
+homepage:            https://github.com/MichelBoucey/Vault-KV-Client
+license:             BSD3
+license-file:        LICENSE
+author:              Michel Boucey
+maintainer:          michel.boucey@cybervisible.fr
+copyright:           (c) 2019 - Michel Boucey
+category:            Database, Security
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+Source-Repository head
+  Type: git
+  Location: https://github.com/MichelBoucey/vaultdoor.git
+
+library
+  exposed-modules:    Database.Vault.Connection
+                    , Database.Vault.KV.V2
+  other-modules:      Database.Vault.KV.V2.Types
+  other-extensions:   OverloadedStrings
+  build-depends:      aeson >= 0.8.0.2 && < 1.5
+                    , base >= 4.8.1.0 && < 5
+                    , http-client
+                    , http-types
+                    , bytestring
+                    , http-conduit
+                    , text
+                    , unordered-containers
+                    , lens
+                    , lens-aeson
+                    , vector
+
+  default-language:   Haskell2010
+  GHC-Options:        -Wall
