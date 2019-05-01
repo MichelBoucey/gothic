@@ -1,21 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveAnyClass    #-}
 
-module Database.Vault.KV.V2.Types where
+module Database.Vault.KVv2.Client.Types where
 
-import qualified Data.Aeson                    as A
--- import qualified Data.Aeson.Lens               as L
+import           Data.Aeson
 import qualified Data.ByteString               as B
-import           Data.HashMap.Strict           as HM
-import qualified Data.Vector as V
+import           Data.HashMap.Strict
 import           Data.HashSet
-import           Network.HTTP.Client           (Manager)
 import qualified Data.Text                     as T
-import Control.Monad
-
-data VaultAPIVersion = V1
-
-instance Show VaultAPIVersion where
-  show V1 = "v1"
+import qualified Data.Vector as V
+import           GHC.Generics
+import           Network.HTTP.Client           (Manager)
 
 data VaultConfig =
   VaultConfig
@@ -36,7 +32,7 @@ data SecretVersion = LatestVersion
                    | Version !Int
                    deriving (Show)
 
-newtype SecretData = SecretData (HashMap T.Text T.Text) 
+newtype SecretData = SecretData (HashMap T.Text T.Text) deriving (Show, Generic, ToJSON, FromJSON)
 
 -- TODO instance A.ToJSON SecretData where
 
@@ -46,24 +42,7 @@ data SecretMetadata =
     , version       :: Int
     , deletionTime  :: T.Text
     , destroyed     :: Bool
-    } deriving (Show)
-
-instance A.ToJSON SecretMetadata where
-  toJSON (SecretMetadata c v l s) =
-    A.object [ "created_time"  A..= c
-             , "version"       A..= v
-             , "deletion_time" A..= l
-             , "destroyed"     A..= s
-             ]
-
-instance A.FromJSON SecretMetadata where
-  parseJSON (A.Object v) =
-    SecretMetadata <$>
-      v A..: "created_time"  <*>
-      v A..: "version"       <*>
-      v A..: "deletion_time" <*>
-      v A..: "destroyed"
-  parseJSON _            = mzero
+    } deriving (Show, Generic, ToJSON, FromJSON)
 
 newtype SecretPath = SecretPath { unSecretPath :: String } deriving (Show)
 
@@ -82,8 +61,9 @@ https://github.com/hashicorp/vault/blob/5269abb64c878aabbf91d0e54befb314630fae12
 
 -}
 
-data VaultKVResponse =
-  VaultSecret 
+-- https://www.vaultproject.io/api/secret/kv/kv-v2.html
+data VaultResponse =
+  VaultResponse
     { leaseDuration :: Int
     , wrapInfo      :: Maybe (HashMap T.Text T.Text)
     , auth          :: Maybe VaultAuth
@@ -92,20 +72,21 @@ data VaultKVResponse =
     , warnings      :: Maybe (V.Vector T.Text)
     , leaseId       :: T.Text
     , renewable     :: Bool
-    }
+    } deriving (Show, Generic, ToJSON, FromJSON)
+  -- | VaultErrors ?
 
 -- github.com/hashicorp/vault/logical/auth.go
 data VaultAuth =
   VaultAuth
-    { clientToken :: T.Text
-    , accessor :: T.Text
-    , period :: Maybe Int
-    , explicitMaxTTL :: Maybe Int
-    , numUses :: Maybe Int
-    , entityID :: Maybe T.Text
-    , policies :: Maybe (V.Vector T.Text)
-    , tokenPolicies :: Maybe (V.Vector T.Text)
-    , identityPolicies :: Maybe (V.Vector T.Text)
+    { clientToken               :: T.Text
+    , accessor                  :: T.Text
+    , period                    :: Maybe Int
+    , explicitMaxTTL            :: Maybe Int
+    , numUses                   :: Maybe Int
+    , entityID                  :: Maybe T.Text
+    , policies                  :: Maybe (V.Vector T.Text)
+    , tokenPolicies             :: Maybe (V.Vector T.Text)
+    , identityPolicies          :: Maybe (V.Vector T.Text)
     , externalNamespacePolicies :: Maybe (HashMap T.Text T.Text)
-    , metadata :: Maybe (HashMap T.Text T.Text)
-    }
+    , metadata                  :: Maybe (HashMap T.Text T.Text)
+    } deriving (Show, Generic, ToJSON, FromJSON)

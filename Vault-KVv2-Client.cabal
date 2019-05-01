@@ -1,8 +1,8 @@
-name:                Vault-KV-Client
+name:                Vault-KVv2-Client
 version:             0.1.0
 synopsis:            A Haskell client library for the Hashicorp Vault
 description:         A Haskell client library for the Hashicorp Vault
-homepage:            https://github.com/MichelBoucey/Vault-KV-Client
+homepage:            https://github.com/MichelBoucey/Vault-KVv2-Client
 license:             BSD3
 license-file:        LICENSE
 author:              Michel Boucey
@@ -15,16 +15,18 @@ extra-source-files:  ReadMe.md
 
 Source-Repository head
   Type: git
-  Location: https://github.com/MichelBoucey/Vault-KV-Client
+  Location: https://github.com/MichelBoucey/Vault-KVv2-Client
 
 library
-  exposed-modules:    Database.Vault.Connection
-                    , Database.Vault.KV.V2
-  other-modules:      Database.Vault.KV.V2.Types
+  exposed-modules:    Database.Vault.KVv2.Client
+                    , Database.Vault.KVv2.Client.Types
+                    , Database.Vault.KVv2.Client.Connection
   other-extensions:   OverloadedStrings
   build-depends:      aeson >= 0.8.0.2 && < 1.5
                     , base >= 4.8.1.0 && < 5
+                    , exceptions
                     , http-client
+                    , http-client-tls
                     , http-types
                     , bytestring
                     , http-conduit

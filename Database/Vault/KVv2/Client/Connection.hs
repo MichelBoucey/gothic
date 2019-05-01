@@ -1,12 +1,11 @@
-module Database.Vault.Connection where
+module Database.Vault.KVv2.Client.Connection where
 
-import Database.Vault.KV.V2.Types
-import System.Environment (lookupEnv)
--- import Data.Text as T
-import Network.HTTP.Client
 import qualified Data.ByteString.Char8 as C
+import           Network.HTTP.Client.TLS
+import           System.Environment (lookupEnv)
 
--- getVaultConfig :: IO (Either String VaultConfig)
+import Database.Vault.KVv2.Client.Types
+
 getVaultConfig :: IO VaultConfig
 getVaultConfig = do
   Just va <- lookupEnv "VAULT_ADDR"
@@ -16,6 +15,5 @@ getVaultConfig = do
 
 getVaultConnection :: VaultConfig -> IO VaultConnection
 getVaultConnection c = 
-  newManager defaultManagerSettings >>= \m -> return VaultConnection { config = c, manager = m }
+  newTlsManagerWith tlsManagerSettings >>= \m -> return VaultConnection { config = c, manager = m }
 
--- getSecretsList

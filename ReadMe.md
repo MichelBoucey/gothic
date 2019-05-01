@@ -1,1 +1,1 @@
-### A Haskell client for Vault KV v2
+### A Haskell client for Vault KV Engine v2
