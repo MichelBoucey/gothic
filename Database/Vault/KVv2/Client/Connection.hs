@@ -1,6 +1,8 @@
 module Database.Vault.KVv2.Client.Connection where
 
 import qualified Data.ByteString.Char8 as C
+import           Network.Connection 
+import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS
 import           System.Environment (lookupEnv)
 
@@ -15,5 +17,13 @@ getVaultConfig = do
 
 getVaultConnection :: VaultConfig -> IO VaultConnection
 getVaultConnection c = 
-  newTlsManagerWith tlsManagerSettings >>= \m -> return VaultConnection { config = c, manager = m }
+  newTlsManagerWith tlsDisableCertValidation >>= \m -> return VaultConnection { config = c, manager = m }
 
+tlsDisableCertValidation :: ManagerSettings
+tlsDisableCertValidation =
+  mkManagerSettings
+    TLSSettingsSimple
+      { settingDisableCertificateValidation = True
+      , settingDisableSession               = False
+      , settingUseServerName                = True }
+    Nothing

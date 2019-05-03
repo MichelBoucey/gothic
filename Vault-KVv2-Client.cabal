@@ -24,6 +24,7 @@ library
   other-extensions:   OverloadedStrings
   build-depends:      aeson >= 0.8.0.2 && < 1.5
                     , base >= 4.8.1.0 && < 5
+                    , connection
                     , exceptions
                     , http-client
                     , http-client-tls
@@ -34,6 +35,7 @@ library
                     , unordered-containers
                     , lens
                     , lens-aeson
+                    , scientific
                     , vector
 
   default-language:   Haskell2010

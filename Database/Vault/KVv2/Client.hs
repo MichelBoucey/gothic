@@ -3,8 +3,8 @@
 
 module Database.Vault.KVv2.Client (
 
-  readSecret
-
+  readSecret,
+  -- putSecret
 ) where
 
 import           Network.HTTP.Client
@@ -14,6 +14,7 @@ import qualified Data.Aeson                as A
 import           Control.Monad.Catch
 import qualified Data.Text                 as T
 import           Control.Monad.IO.Class
+import           Data.HashMap.Strict
 
 import Database.Vault.KVv2.Client.Types
 -- https://haskell-lang.org/library/http-client
@@ -37,19 +38,29 @@ readSecret :: VaultConnection
            -> SecretPath
            -> SecretVersion
            -> IO (Maybe A.Value) -- IO (Either VaultResponse)
-readSecret VaultConnection{config = VaultConfig{..},..} (SecretPath p) sv = do
-  let url = vaultAddr ++ "/v1/" ++ secretsEnginePath ++ "data/" ++ p ++
-            (case sv of
-               LatestVersion -> mempty
-               Version v     -> "?version=" ++ show v)
+readSecret VaultConnection { config = VaultConfig {..}, .. } (SecretPath sp) sv = do
+  let url = vaultAddr ++ "/v1/" ++ secretsEnginePath ++ "data/" ++ sp ++ version sv
   req <- parseRequest url >>= \r -> return r { requestHeaders = vaultRequestHeaders vaultToken }
   t <- liftIO (try $ httpLbs req manager)
   return $ case t of
     Right r -> A.decode $ responseBody r
     Left  e -> Just $ A.object ["error" A..= T.pack (show (e :: SomeException))]
+  where
+  version LatestVersion = mempty 
+  version (Version v)   = "?version=" ++ show v
 
 {-
-putSecret = undefined
+-- putSecret :: VaultConnection -> SecretPath -> [(T.Text, T.Text)]
+putSecret VaultConnection { config = VaultConfig {..}, .. } (SecretPath sp) dt = do
+  rb = toSecretData dt
+  r <- parseRequest u >>= \c ->
+         return c { method = "POST", requestBody = rb }
+  t <- liftIO $ try $ httpLbs r m
+  case t of
+    Right _r -> return $ A.decode $ responseBody _r
+    Left  e ->
+      return $
+    Just $ A.object ["error" A..= T.pack (show (e :: SomeException))]
 
 vaultAPIRequest :: Method 
 
@@ -83,3 +94,5 @@ vaultRequestHeaders vt =
   , ("X-Vault-Token", vt)
   ]
 
+toSecretData :: [(T.Text, T.Text)] -> SecretData
+toSecretData l = SecretData (fromList l)

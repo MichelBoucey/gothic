@@ -1,6 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Database.Vault.KVv2.Client.Types where
 
@@ -9,14 +10,15 @@ import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
 import           Data.HashSet
 import qualified Data.Text                     as T
-import qualified Data.Vector as V
+import qualified Data.Vector                   as V
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
+import           Data.Scientific
 
 data VaultConfig =
   VaultConfig
-    { vaultToken :: B.ByteString
-    , vaultAddr :: String
+    { vaultToken        :: B.ByteString
+    , vaultAddr         :: String
     , secretsEnginePath :: String
     } deriving (Show)
 
@@ -26,15 +28,17 @@ data VaultConnection =
     , manager :: Manager
     }
 
-newtype Versions = Versions (HashSet Int) deriving (Show)
+newtype Versions =
+  Versions (HashSet Int)
+  deriving (Show)
 
 data SecretVersion = LatestVersion
-                   | Version !Int
-                   deriving (Show)
+                   | Version !Int deriving (Show)
 
-newtype SecretData = SecretData (HashMap T.Text T.Text) deriving (Show, Generic, ToJSON, FromJSON)
-
--- TODO instance A.ToJSON SecretData where
+newtype SecretData =
+  SecretData
+    (HashMap T.Text T.Text)
+    deriving (Show, Generic, ToJSON, FromJSON)
 
 data SecretMetadata =
   SecretMetadata
@@ -44,11 +48,38 @@ data SecretMetadata =
     , destroyed     :: Bool
     } deriving (Show, Generic, ToJSON, FromJSON)
 
-newtype SecretPath = SecretPath { unSecretPath :: String } deriving (Show)
+newtype SecretPath =
+  SecretPath
+    { unSecretPath :: String }
+    deriving (Show)
+
+data CheckAndSet = CreateOnly        -- cas == 0
+                 | CreateUpdate      -- cas not set
+                 | UpdateVersion Int -- cas > 0
+                 deriving (Show, Generic, ToJSON)
+
+data PutSecretOptions =
+  PutSecretOptions
+    { cas :: CheckAndSet }
+    deriving (Show)
+
+instance ToJSON PutSecretOptions where
+  toJSON PutSecretOptions { cas = CreateOnly }      = object [ "cas" .= Number 0 ]
+  toJSON PutSecretOptions { cas = CreateUpdate }    = object []
+  toJSON PutSecretOptions { cas = UpdateVersion v } = object [ "cas" .= Number (read (show v) :: Scientific) ]
+
+data PutSecretRequestBody =
+  PutSecretRequestBody
+    { options     :: PutSecretOptions
+    , secret_data :: SecretData }
+
+instance ToJSON PutSecretRequestBody where
+  toJSON (PutSecretRequestBody os sd) =
+    object
+      [ "options" .= os,
+        "data"    .= sd ]
 
 {-
- (Response {responseStatus = Status {statusCode = 200, statusMessage = "OK"}, responseVersion = HTTP/1.1, responseHeaders = [("Cache-Control","no-store"),("Content-Type","application/json"),("Date","Sat, 01 Dec 2018 10:10:25 GMT"),("Content-Length","294")], responseBody = Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("data",Object (fromList [("michel",String "True")])),("metadata",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("version",Number 1.0),("created_time",String "2018-12-01T07:12:25.806880744Z")]))])),("request_id",String "3667a85c-ff92-48fb-c265-1b38a3dc2b32"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)])
-
 https://github.com/hashicorp/vault/blob/5269abb64c878aabbf91d0e54befb314630fae12/api/secret.go
 
 "auth": {
@@ -58,7 +89,6 @@ https://github.com/hashicorp/vault/blob/5269abb64c878aabbf91d0e54befb314630fae12
       "apps",
       "default"
     ],
-
 -}
 
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html
