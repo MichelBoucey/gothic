@@ -8,11 +8,11 @@ import           Data.Aeson
 import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
 import           Data.HashSet
+import           Data.Scientific
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
-import           Data.Scientific
 
 data VaultConfig =
   VaultConfig
