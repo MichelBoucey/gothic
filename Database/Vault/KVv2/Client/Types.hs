@@ -90,6 +90,8 @@ https://github.com/hashicorp/vault/blob/5269abb64c878aabbf91d0e54befb314630fae12
     ],
 -}
 
+data VaultKeys = Key T.Text | Folder T.Text
+
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html
 data VaultResponse =
   VaultResponse
@@ -120,5 +122,3 @@ data VaultAuth =
     , metadata                  :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
 
-
--- Secret | Folder

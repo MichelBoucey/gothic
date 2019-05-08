@@ -61,9 +61,9 @@ destroySecretVersions VaultConnection { config = VaultConfig {..}, .. } (SecretP
   request <- parseRequest $ concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "destroy/", sp ]
   runRequest request { requestHeaders = vaultHeaders vaultToken, requestBody = (RequestBodyLBS $ A.encode vs) } manager
 
+secretsList = undefined
 {-
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html#list-secrets
-secretsList = undefined
 -}
 
 {-
