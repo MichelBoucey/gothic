@@ -16,23 +16,23 @@ import           Network.HTTP.Client           (Manager)
 
 data VaultConfig =
   VaultConfig
-    { vaultToken        :: B.ByteString
-    , vaultAddr         :: String
+    { vaultAddr         :: String
     , secretsEnginePath :: String
+    , vaultToken        :: B.ByteString
     } deriving (Show)
 
 data VaultConnection =
   VaultConnection
     { config  :: VaultConfig
-    , manager :: Manager
-    }
-
-newtype Versions =
-  Versions (HashSet Int)
-  deriving (Show)
+    , manager :: Manager }
 
 data SecretVersion = LatestVersion
-                   | Version !Int deriving (Show)
+                   | Version !Int
+                   deriving (Show)
+
+newtype SecretVersions =
+  SecretVersions (HashSet Int)
+  deriving (Show, Generic, ToJSON, FromJSON)
 
 newtype SecretData =
   SecretData
@@ -49,8 +49,8 @@ data SecretMetadata =
 
 newtype SecretPath =
   SecretPath
-    { unSecretPath :: String }
-    deriving (Show)
+    { path :: String }
+    deriving (Show, Generic, ToJSON)
 
 data CheckAndSet = CreateOnly        -- cas == 0
                  | CreateUpdate      -- cas not set
@@ -119,3 +119,6 @@ data VaultAuth =
     , externalNamespacePolicies :: Maybe (HashMap T.Text T.Text)
     , metadata                  :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
+
+
+-- Secret | Folder
