@@ -4,7 +4,7 @@
 
 module Database.Vault.KVv2.Client.Types where
 
-import           Data.Aeson
+import           Data.Aeson                    as A
 import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
 import           Data.HashSet
@@ -41,11 +41,12 @@ newtype SecretData =
 
 data SecretMetadata =
   SecretMetadata
-    { createdTime   :: T.Text
+    { destroyed     :: Bool
+    , deletion_time   :: T.Text
     , version       :: Int
-    , deletionTime  :: T.Text
-    , destroyed     :: Bool
-    } deriving (Show, Generic, ToJSON, FromJSON)
+    , created_time   :: T.Text
+    } deriving (Show, Generic, FromJSON)
+
 
 newtype SecretPath =
   SecretPath
@@ -70,7 +71,7 @@ instance ToJSON PutSecretOptions where
 data PutSecretRequestBody =
   PutSecretRequestBody
     { options     :: PutSecretOptions
-    , secret_data :: SecretData }
+    , put_data :: SecretData }
 
 instance ToJSON PutSecretRequestBody where
   toJSON (PutSecretRequestBody os sd) =
@@ -90,19 +91,38 @@ https://github.com/hashicorp/vault/blob/5269abb64c878aabbf91d0e54befb314630fae12
     ],
 -}
 
+data ResponseData =
+  ResponseData
+    { secret_data     :: SecretData
+    , secret_metadata :: SecretMetadata
+    } deriving (Show, Generic)
+
+instance FromJSON ResponseData where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = toJSONName }
+
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html
 data VaultResponse =
   VaultResponse
-    { leaseDuration :: Int
-    , wrapInfo      :: Maybe (HashMap T.Text T.Text)
+    { lease_duration :: Int
+    , wrap_info      :: Maybe (HashMap T.Text T.Text)
     , auth          :: Maybe VaultAuth
-    , secretData    :: SecretData
-    , requestId     :: T.Text
+    , response_data  :: ResponseData
+    , request_id     :: T.Text
     , warnings      :: Maybe (V.Vector T.Text)
-    , leaseId       :: T.Text
+    , lease_id     :: T.Text
     , renewable     :: Bool
-    } deriving (Show, Generic, ToJSON, FromJSON)
-  -- | VaultErrors ?
+    } deriving (Show, Generic)
+
+instance FromJSON VaultResponse where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = toJSONName }
+
+toJSONName :: String -> String
+toJSONName "secret_data"     = "data"
+toJSONName "secret_metadata" = "metadata"
+toJSONName "response_data"   = "data"
+toJSONName s                 = s
 
 -- github.com/hashicorp/vault/logical/auth.go
 data VaultAuth =
@@ -117,7 +137,7 @@ data VaultAuth =
     , tokenPolicies             :: Maybe (V.Vector T.Text)
     , identityPolicies          :: Maybe (V.Vector T.Text)
     , externalNamespacePolicies :: Maybe (HashMap T.Text T.Text)
-    , metadata                  :: Maybe (HashMap T.Text T.Text)
+    , auth_metadata             :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
 
 

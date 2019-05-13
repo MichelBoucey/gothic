@@ -20,6 +20,7 @@ Source-Repository head
 library
   exposed-modules:    Database.Vault.KVv2.Client
                     , Database.Vault.KVv2.Client.Types
+                    , Database.Vault.KVv2.Client.Internal
                     , Database.Vault.KVv2.Client.Connection
   other-extensions:   OverloadedStrings
   build-depends:      aeson >= 0.8.0.2 && < 1.5
