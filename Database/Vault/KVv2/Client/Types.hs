@@ -101,6 +101,8 @@ instance FromJSON ResponseData where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = toJSONName }
 
+data VaultKeys = Key T.Text | Folder T.Text
+
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html
 data VaultResponse =
   VaultResponse
@@ -140,5 +142,3 @@ data VaultAuth =
     , auth_metadata             :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
 
-
--- Secret | Folder
