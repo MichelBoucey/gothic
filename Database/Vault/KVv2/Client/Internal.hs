@@ -20,7 +20,7 @@ runRequest r m = do
   return $ case t of
     Right b -> case A.decode (responseBody b) of
                  Just v  -> Right v
-                 Nothing -> Left "Something went wrong..."
+                 Nothing -> Right A.Null
     Left  e -> Left $ "error" ++ show (e::SomeException)
 
 vaultHeaders :: B.ByteString -> [Header]

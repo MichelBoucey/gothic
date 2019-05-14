@@ -7,7 +7,7 @@ module Database.Vault.KVv2.Client.Types where
 import           Data.Aeson                    as A
 import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
-import           Data.HashSet
+import           Data.Vector
 import           Data.Scientific
 import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
@@ -33,8 +33,13 @@ data SecretVersion = LatestVersion
                    deriving (Show)
 
 newtype SecretVersions =
-  SecretVersions (HashSet Int)
-  deriving (Show, Generic, ToJSON, FromJSON)
+  SecretVersions (Vector Value)
+  deriving (Show)
+
+instance ToJSON SecretVersions where
+  toJSON (SecretVersions vs) =
+    object
+      [ "versions" .= Array vs ]
 
 newtype SecretData =
   SecretData
