@@ -1,10 +1,10 @@
 module Database.Vault.KVv2.Client.Connection where
 
-import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Char8   as C
 import           Network.Connection 
 import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS
-import           System.Environment (lookupEnv)
+import           System.Environment      (lookupEnv)
 
 import Database.Vault.KVv2.Client.Types
 

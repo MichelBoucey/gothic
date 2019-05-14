@@ -3,7 +3,8 @@
 module Database.Vault.KVv2.Client.Internal (
 
   runRequest,
-  vaultHeaders
+  vaultHeaders,
+  toJSONName
 
 ) where
 
@@ -26,3 +27,9 @@ vaultHeaders :: B.ByteString -> [Header]
 vaultHeaders vt =
   [ ("Content-Type", "application/json; charset=utf-8")
   , ("X-Vault-Token", vt) ]
+
+toJSONName :: String -> String
+toJSONName "secret_data"     = "data"
+toJSONName "secret_metadata" = "metadata"
+toJSONName "response_data"   = "data"
+toJSONName s                 = s

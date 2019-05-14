@@ -14,6 +14,8 @@ import qualified Data.Vector                   as V
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
 
+import           Database.Vault.KVv2.Client.Internal
+
 data VaultConfig =
   VaultConfig
     { vaultAddr         :: String
@@ -58,7 +60,7 @@ data CheckAndSet = CreateOnly        -- cas == 0
                  | UpdateVersion Int -- cas > 0
                  deriving (Show, Generic, ToJSON)
 
-data PutSecretOptions =
+newtype PutSecretOptions =
   PutSecretOptions
     { cas :: CheckAndSet }
     deriving (Show)
@@ -70,7 +72,7 @@ instance ToJSON PutSecretOptions where
 
 data PutSecretRequestBody =
   PutSecretRequestBody
-    { options     :: PutSecretOptions
+    { options  :: PutSecretOptions
     , put_data :: SecretData }
 
 instance ToJSON PutSecretRequestBody where
@@ -98,33 +100,28 @@ data ResponseData =
     } deriving (Show, Generic)
 
 instance FromJSON ResponseData where
-  parseJSON = genericParseJSON defaultOptions {
-                fieldLabelModifier = toJSONName }
+  parseJSON =
+    genericParseJSON
+      defaultOptions { fieldLabelModifier = toJSONName }
 
-data VaultKeys = Key T.Text | Folder T.Text
+data VaultList = Key T.Text | Folder T.Text
 
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html
 data VaultResponse =
   VaultResponse
     { lease_duration :: Int
     , wrap_info      :: Maybe (HashMap T.Text T.Text)
-    , auth          :: Maybe VaultAuth
+    , auth           :: Maybe VaultAuth
     , response_data  :: ResponseData
     , request_id     :: T.Text
-    , warnings      :: Maybe (V.Vector T.Text)
-    , lease_id     :: T.Text
-    , renewable     :: Bool
+    , warnings       :: Maybe (V.Vector T.Text)
+    , lease_id       :: T.Text
+    , renewable      :: Bool
     } deriving (Show, Generic)
 
 instance FromJSON VaultResponse where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = toJSONName }
-
-toJSONName :: String -> String
-toJSONName "secret_data"     = "data"
-toJSONName "secret_metadata" = "metadata"
-toJSONName "response_data"   = "data"
-toJSONName s                 = s
 
 -- github.com/hashicorp/vault/logical/auth.go
 data VaultAuth =
