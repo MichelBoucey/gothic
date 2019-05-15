@@ -115,6 +115,6 @@ secretData VaultResponse{response_data=ResponseData{secret_data=sd}} = sd
 toSecretData :: [(T.Text, T.Text)] -> SecretData
 toSecretData l = SecretData (HM.fromList l)
 
-toSecretVersions :: [A.Value] -> SecretVersions
-toSecretVersions l = SecretVersions (V.fromList l)
+toSecretVersions :: [Int] -> SecretVersions
+toSecretVersions is = SecretVersions $ V.fromList $ A.toJSON <$> is
 

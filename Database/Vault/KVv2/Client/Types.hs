@@ -10,9 +10,10 @@ import           Data.HashMap.Strict
 import           Data.Vector
 import           Data.Scientific
 import qualified Data.Text                     as T
-import qualified Data.Vector                   as V
+import           Data.Vector                   as V
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
+import           Prelude                       as P
 
 import           Database.Vault.KVv2.Client.Internal
 
@@ -71,7 +72,7 @@ newtype PutSecretOptions =
     deriving (Show)
 
 instance ToJSON PutSecretOptions where
-  toJSON PutSecretOptions { cas = CreateOnly }      = object [ "cas" .= Number 0 ]
+  toJSON PutSecretOptions { cas = CreateOnly }      = object [ "cas" .= Number 0.0 ]
   toJSON PutSecretOptions { cas = CreateUpdate }    = object []
   toJSON PutSecretOptions { cas = UpdateVersion v } = object [ "cas" .= Number (read (show v) :: Scientific) ]
 
@@ -109,7 +110,9 @@ instance FromJSON ResponseData where
     genericParseJSON
       defaultOptions { fieldLabelModifier = toJSONName }
 
-data VaultList = Key T.Text | Folder T.Text
+data VaultItem = Key T.Text
+              | Folder T.Text
+              deriving (Show) 
 
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html
 data VaultResponse =
@@ -144,3 +147,11 @@ data VaultAuth =
     , auth_metadata             :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
 
+splitKeys :: [T.Text] -> [VaultItem]
+splitKeys ts =
+  P.foldl isFolder mempty ts 
+  where
+    isFolder l t =
+      if T.last t == '/'
+        then (l <> [Folder t])
+        else (l <> [Key t])
