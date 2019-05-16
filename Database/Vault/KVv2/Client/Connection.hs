@@ -1,19 +1,20 @@
 module Database.Vault.KVv2.Client.Connection where
 
-import qualified Data.ByteString.Char8   as C
+-- import qualified Data.ByteString.Char8   as C
 import           Network.Connection 
 import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS
 import           System.Environment      (lookupEnv)
-
+import           Data.ByteString         as B
 import Database.Vault.KVv2.Client.Types
 
-getVaultConfig :: IO VaultConfig
-getVaultConfig = do
+getVaultConfig :: String -> IO VaultConfig
+-- getVaultConfig :: String -> Maybe VaultToken -> IO VaultConfig
+getVaultConfig sep = do
   Just va <- lookupEnv "VAULT_ADDR"
   Just hm <- lookupEnv "HOME"
-  vt      <- readFile (hm ++ "/.vault-token")
-  return VaultConfig { vaultAddr = va, vaultToken = C.pack vt, secretsEnginePath = "secret/" }
+  vt      <- B.readFile (hm ++ "/.vault-token")
+  return VaultConfig { vaultAddr = va, vaultToken = vt, secretsEnginePath = sep }
 
 getVaultConnection :: VaultConfig -> IO VaultConnection
 getVaultConnection c = 

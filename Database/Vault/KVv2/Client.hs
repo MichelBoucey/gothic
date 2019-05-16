@@ -9,6 +9,7 @@ module Database.Vault.KVv2.Client (
   deleteSecretVersions,
   unDeleteSecretVersions,
   destroySecretVersions,
+  secretsList,
   toSecretData,
   toSecretVersions,
   secretData
@@ -101,6 +102,12 @@ destroySecretVersions VaultConnection{config=VaultConfig{..},..} (SecretPath sp)
 
 -- https://www.vaultproject.io/api/secret/kv/kv-v2.html#list-secrets
 -- secretsList = undefined
+secretsList :: VaultConnection
+            -> SecretPath
+            -> IO (Either String A.Value)
+secretsList VaultConnection{config=VaultConfig{..},..} (SecretPath sp) = do
+  request <- parseRequest $ concat [ "LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
+  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
 
 --https://www.vaultproject.io/api/secret/kv/kv-v2.html#read-secret-metadata
 -- readSecretMetadata = undefined
