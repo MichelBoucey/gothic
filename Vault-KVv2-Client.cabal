@@ -37,6 +37,7 @@ library
                     , lens
                     , lens-aeson
                     , scientific
+                    , unix
                     , vector
 
   default-language:   Haskell2010

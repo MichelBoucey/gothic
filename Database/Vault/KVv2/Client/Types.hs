@@ -17,6 +17,8 @@ import           Prelude                       as P
 
 import           Database.Vault.KVv2.Client.Internal
 
+type VaultToken = String
+
 data VaultConfig =
   VaultConfig
     { vaultAddr         :: String
