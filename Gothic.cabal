@@ -1,8 +1,8 @@
 name:                Gothic
 version:             0.1.0
-synopsis:            A Haskell client library for the Hashicorp Vault
-description:         A Haskell client library for the Hashicorp Vault
-homepage:            https://github.com/MichelBoucey/Vault-KVv2-Client
+synopsis:            A Haskell Vault KV v2 secret engine client
+description:         A Haskell Hashicorp Vault KV v2 secret engine client library
+homepage:            https://github.com/MichelBoucey/Gothic
 license:             BSD3
 license-file:        LICENSE
 author:              Michel Boucey
@@ -15,7 +15,7 @@ extra-source-files:  ReadMe.md
 
 Source-Repository head
   Type: git
-  Location: https://github.com/MichelBoucey/Vault-KVv2-Client
+  Location: https://github.com/MichelBoucey/Gothic
 
 library
   exposed-modules:    Database.Vault.KVv2.Client
