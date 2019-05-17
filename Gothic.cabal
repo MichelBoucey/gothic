@@ -1,4 +1,4 @@
-name:                Vault-KVv2-Client
+name:                Gothic
 version:             0.1.0
 synopsis:            A Haskell client library for the Hashicorp Vault
 description:         A Haskell client library for the Hashicorp Vault
@@ -21,7 +21,6 @@ library
   exposed-modules:    Database.Vault.KVv2.Client
                     , Database.Vault.KVv2.Client.Types
                     , Database.Vault.KVv2.Client.Internal
-                    , Database.Vault.KVv2.Client.Connection
   other-extensions:   OverloadedStrings
   build-depends:      aeson >= 0.8.0.2 && < 1.5
                     , base >= 4.8.1.0 && < 5

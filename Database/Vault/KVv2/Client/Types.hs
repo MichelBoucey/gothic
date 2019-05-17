@@ -7,10 +7,9 @@ module Database.Vault.KVv2.Client.Types where
 import           Data.Aeson                    as A
 import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
-import           Data.Vector
 import           Data.Scientific
 import qualified Data.Text                     as T
-import           Data.Vector                   as V
+import qualified Data.Vector                   as V
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
 import           Prelude                       as P
@@ -19,24 +18,19 @@ import           Database.Vault.KVv2.Client.Internal
 
 type VaultToken = String
 
-data VaultConfig =
-  VaultConfig
+data VaultConnection =
+  VaultConnection
     { vaultAddr         :: String
     , secretsEnginePath :: String
     , vaultToken        :: B.ByteString
-    } deriving (Show)
-
-data VaultConnection =
-  VaultConnection
-    { config  :: VaultConfig
-    , manager :: Manager }
+    , manager           :: Manager }
 
 data SecretVersion = LatestVersion
                    | Version !Int
                    deriving (Show)
 
 newtype SecretVersions =
-  SecretVersions (Vector Value)
+  SecretVersions (V.Vector Value)
   deriving (Show)
 
 instance ToJSON SecretVersions where
@@ -89,18 +83,6 @@ instance ToJSON PutSecretRequestBody where
       [ "options" .= os,
         "data"    .= sd ]
 
-{-
-https://github.com/hashicorp/vault/blob/5269abb64c878aabbf91d0e54befb314630fae12/api/secret.go
-
-"auth": {
-    "client_token": "af5f7682-aa55-fa37-5039-ee116df56600",
-    "accessor": "19b5407e-b304-7cde-e946-54942325d3c1",
-    "policies": [
-      "apps",
-      "default"
-    ],
--}
-
 data ResponseData =
   ResponseData
     { secret_data     :: SecretData
@@ -116,7 +98,6 @@ data VaultItem = Key T.Text
               | Folder T.Text
               deriving (Show) 
 
--- https://www.vaultproject.io/api/secret/kv/kv-v2.html
 data VaultResponse =
   VaultResponse
     { lease_duration :: Int
@@ -133,7 +114,6 @@ instance FromJSON VaultResponse where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = toJSONName }
 
--- github.com/hashicorp/vault/logical/auth.go
 data VaultAuth =
   VaultAuth
     { clientToken               :: T.Text
@@ -150,10 +130,11 @@ data VaultAuth =
     } deriving (Show, Generic, ToJSON, FromJSON)
 
 splitKeys :: [T.Text] -> [VaultItem]
-splitKeys ts =
-  P.foldl isFolder mempty ts 
+splitKeys =
+  P.foldl isFolder mempty
   where
-    isFolder l t =
-      if T.last t == '/'
-        then (l <> [Folder t])
-        else (l <> [Key t])
+  isFolder l t =
+    if T.last t == '/'
+      then l <> [Folder t]
+      else l <> [Key t]
+

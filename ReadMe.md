@@ -1,1 +1,1 @@
-### A Haskell client for Vault KV Engine v2
+### Gothic: A Haskell client for Vault KV Engine v2
