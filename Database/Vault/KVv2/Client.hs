@@ -3,26 +3,43 @@
 
 module Database.Vault.KVv2.Client (
 
+  -- * Connection and configure Vault KV v2 Engine
   vaultConnect,
+  configKVEngine,
+
+  -- * Basic operations
   getSecret,
   putSecret,
+
+  -- * Soft secret deletion
   deleteSecret,
   deleteSecretVersions,
   unDeleteSecretVersions,
+
+  -- * Permanent secret deletion
+  destroySecret,
   destroySecretVersions,
+
+  -- * Get infomation
+  readSecretMetadata,
   secretsList,
+
+  -- * Utils
+  secret,
   toSecretData,
   toSecretVersions,
-  secretData
 
 ) where
 
+import           Control.Lens
 import qualified Data.Aeson                          as A
+import           Data.Aeson.Lens
 import qualified Data.ByteString                     as B
 import qualified Data.ByteString.Char8               as C
 import qualified Data.Text                           as T
-import           Data.HashMap.Strict                 as HM
-import           Data.Vector                         as V (fromList)
+import qualified Data.HashMap.Strict                 as HM
+import qualified Data.Maybe                          as M
+import qualified Data.Vector                         as V (fromList)
 import           Network.Connection 
 import           Network.HTTP.Client
 import           Network.HTTP.Client.TLS
@@ -32,67 +49,84 @@ import           System.Posix.Files                  (fileExist)
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
 
-vaultConnect :: String                             -- ^ Secrets engine path
-             -> Maybe VaultToken
-             -> Bool                               -- ^ Certificate validation
+
+--https://www.vaultproject.io/api/secret/kv/kv-v2.html
+
+-- | Get a 'VaultConnection' or an error message.
+vaultConnect :: Maybe String                       -- ^ Use Just this string as Vault address or get it from VAULT_ADDR
+             -> String                             -- ^ Secrets engine path
+             -> Maybe VaultToken                   -- ^ Use Just this Vault token or get it from $HOME/.vaut-token
+             -> Bool                               -- ^ Disable certificate validation
              -> IO (Either String VaultConnection)
-vaultConnect sep mvt dcv = do
+vaultConnect mva sep mvt dcv = do
   nm <- newTlsManagerWith $
-         mkManagerSettings
-           TLSSettingsSimple
-             { settingDisableCertificateValidation = dcv
-             , settingDisableSession               = False
-             , settingUseServerName                = True }
-           Nothing
-  Just va <- lookupEnv "VAULT_ADDR"
+          mkManagerSettings
+            TLSSettingsSimple
+              { settingDisableCertificateValidation = dcv
+              , settingDisableSession               = False
+              , settingUseServerName                = True
+              }
+            Nothing
+  va <- case mva of
+          Just va -> return (Just va)
+          Nothing -> lookupEnv "VAULT_ADDR"
   evt <- case mvt of
-             Just t  -> return $ Right (C.pack t)
-             Nothing -> do
-               Just hm <- lookupEnv "HOME" -- TODO
-               let pf = hm ++ "/.vault-token"
-               fe <- fileExist pf
-               if fe
-                 then Right <$> B.readFile pf
-                 else return (Left $ "No Vault token file found at " ++ pf)
-  return $
-    case evt of
-      Right vt -> Right VaultConnection { vaultAddr = va, vaultToken = vt, secretsEnginePath = sep, manager = nm }
-      Left s   -> Left s
+           Just t  -> return (Right $ C.pack t)
+           Nothing -> do
+             hm <- lookupEnv "HOME"
+             if M.isJust hm
+               then do
+                 let pf = M.fromJust hm ++ "/.vault-token"
+                 if M.isJust va
+                   then do
+                     fe <- fileExist pf
+                     if fe 
+                       then Right <$> B.readFile pf
+                       else return (Left $ "No Vault token file found at " ++ pf)
+                   else return (Left "Variable environnment VAULT_ADDR not set")
+               else return (Left "Variable environnment VAULT_ADDR not set")
+  pure $
+    (\vt -> VaultConnection { vaultAddr = M.fromJust va, vaultToken = vt, secretsEnginePath = sep, manager = nm }) <$> evt
 
--- configSecretEngine
+configKVEngine :: Int  -- ^ Max versions
+               -> Bool -- ^ CAS required
+               -> IO (Either String A.Value)
+configKVEngine = undefined  -- TODO -> KVv2Config type
 
+-- | Get a secret from Vault.
 getSecret :: VaultConnection
           -> SecretPath
           -> SecretVersion
-          -> IO (Either String VaultResponse)
+          -> IO (Either String A.Value)
 getSecret VaultConnection{..} (SecretPath sp) sv = do
-  request <- parseRequest $
-               concat [ vaultAddr, "/v1/", secretsEnginePath, "data/", sp, queryString sv ]
-  esv <- runRequest request { requestHeaders = vaultHeaders vaultToken } manager
-  return $
-    case esv of
-      Right v ->
-       case A.fromJSON v :: A.Result VaultResponse of
-         A.Success vr -> Right vr
-         A.Error e    -> Left e
-      Left e          -> Left e
+  request <-
+    parseRequest $
+      concat [ vaultAddr, "/v1/", secretsEnginePath, "data/", sp, queryString sv ]
+  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
   where
     queryString LatestVersion = mempty
     queryString (Version v)   = "?version=" ++ show v
 
+-- | Put a secret in Vault.
 putSecret :: VaultConnection
           -> CheckAndSet
           -> SecretPath
           -> SecretData
           -> IO (Either String A.Value)
 putSecret VaultConnection{..} cas (SecretPath sp) sd = do
-  let rb = RequestBodyLBS $
-             A.encode PutSecretRequestBody { options = PutSecretOptions { cas = cas }, put_data = sd }
-  request <- parseRequest $ concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ]
+  let rb = RequestBodyLBS $ A.encode PutSecretRequestBody { options = PutSecretOptions { cas = cas }, put_data = sd }
+  request <-
+    parseRequest $
+      concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ]
   runRequest request { requestHeaders = vaultHeaders vaultToken, requestBody = rb } manager
 
-{-
+{- 
+putSecret -> (Version 1.0)
 Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("version",Number 1.0),("created_time",String "2019-05-14T20:54:20.519889313Z")])),("request_id",String "52c3a8a0-1409-c41c-ba94-6eab8a4e4420"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)])
+
+
+putSecret conn CreateOnly (SecretPath "Bob") (toSecretData [("Square","PANTS")])
+Right (Object (fromList [("errors",Array [String "check-and-set parameter did not match the current version"])]))
 -}
 
 deleteSecret :: VaultConnection
@@ -119,8 +153,16 @@ unDeleteSecretVersions VaultConnection{..} (SecretPath sp) vs = do
   runRequest
     request
       { requestHeaders = vaultHeaders vaultToken
-      , requestBody = RequestBodyLBS (A.encode vs) }
+      , requestBody = RequestBodyLBS (A.encode vs)
+      }
     manager
+
+destroySecret :: VaultConnection
+              -> SecretPath
+              -> IO (Either String A.Value)
+destroySecret VaultConnection{..} (SecretPath sp) = do
+  request <- parseRequest $ concat [ "DELETE ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
+  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
 
 destroySecretVersions :: VaultConnection
                       -> SecretPath
@@ -131,11 +173,10 @@ destroySecretVersions VaultConnection{..} (SecretPath sp) vs = do
   runRequest
     request
       { requestHeaders = vaultHeaders vaultToken
-      , requestBody = RequestBodyLBS (A.encode vs) }
+      , requestBody = RequestBodyLBS (A.encode vs)
+      }
     manager
 
--- https://www.vaultproject.io/api/secret/kv/kv-v2.html#list-secrets
--- secretsList = undefined
 secretsList :: VaultConnection
             -> SecretPath
             -> IO (Either String A.Value)
@@ -143,19 +184,35 @@ secretsList VaultConnection{..} (SecretPath sp) = do
   request <- parseRequest $ concat [ "LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
   runRequest request { requestHeaders = vaultHeaders vaultToken } manager
 
---https://www.vaultproject.io/api/secret/kv/kv-v2.html#read-secret-metadata
--- readSecretMetadata = undefined
+readSecretMetadata :: VaultConnection
+            -> SecretPath
+            -> IO (Either String A.Value)
+readSecretMetadata VaultConnection{..} (SecretPath sp) = do
+  request <- parseRequest $ concat [ "GET ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
+  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
 
 -- updateSecretMetadata = undefined
 
 -- Utils
 
-secretData :: VaultResponse -> SecretData
-secretData VaultResponse{response_data=ResponseData{secret_data=sd}} = sd
+secret :: Either String A.Value
+       -> IO (Either String SecretData)
+secret (Left s) = return (Left s)
+secret (Right v) =
+ return $
+   case v ^? key "data" . key "data" of
+     Just o  ->
+       case A.fromJSON o :: A.Result SecretData of
+         A.Success sd -> Right sd
+         A.Error e    -> Left e
+     Nothing -> Left "No secret data"
 
-toSecretData :: [(T.Text, T.Text)] -> SecretData
+toSecretData :: [(T.Text,T.Text)] -> SecretData
 toSecretData l = SecretData (HM.fromList l)
 
 toSecretVersions :: [Int] -> SecretVersions
 toSecretVersions is = SecretVersions $ V.fromList $ A.toJSON <$> is
-
+{-
+isDestroyed :: Either String A.Value -> IO (Either String Bool)
+isDestroyed = undefined
+-}

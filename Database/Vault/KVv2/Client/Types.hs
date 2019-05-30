@@ -12,9 +12,6 @@ import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
-import           Prelude                       as P
-
-import           Database.Vault.KVv2.Client.Internal
 
 type VaultToken = String
 
@@ -23,11 +20,13 @@ data VaultConnection =
     { vaultAddr         :: String
     , secretsEnginePath :: String
     , vaultToken        :: B.ByteString
-    , manager           :: Manager }
+    , manager           :: Manager
+    }
 
-data SecretVersion = LatestVersion
-                   | Version !Int
-                   deriving (Show)
+data SecretVersion
+  = LatestVersion
+  | Version !Int
+  deriving (Show)
 
 newtype SecretVersions =
   SecretVersions (V.Vector Value)
@@ -46,9 +45,9 @@ newtype SecretData =
 data SecretMetadata =
   SecretMetadata
     { destroyed     :: Bool
-    , deletion_time   :: T.Text
+    , deletion_time :: T.Text
     , version       :: Int
-    , created_time   :: T.Text
+    , created_time  :: T.Text
     } deriving (Show, Generic, FromJSON)
 
 
@@ -57,10 +56,11 @@ newtype SecretPath =
     { path :: String }
     deriving (Show, Generic, ToJSON)
 
-data CheckAndSet = CreateOnly        -- cas == 0
-                 | CreateUpdate      -- cas not set
-                 | UpdateVersion Int -- cas > 0
-                 deriving (Show, Generic, ToJSON)
+data CheckAndSet
+  = WriteAllowed
+  | CreateOnly
+  | CurrentVersion Int
+  deriving (Show, Generic, ToJSON)
 
 newtype PutSecretOptions =
   PutSecretOptions
@@ -68,21 +68,23 @@ newtype PutSecretOptions =
     deriving (Show)
 
 instance ToJSON PutSecretOptions where
-  toJSON PutSecretOptions { cas = CreateOnly }      = object [ "cas" .= Number 0.0 ]
-  toJSON PutSecretOptions { cas = CreateUpdate }    = object []
-  toJSON PutSecretOptions { cas = UpdateVersion v } = object [ "cas" .= Number (read (show v) :: Scientific) ]
+  toJSON PutSecretOptions { cas = WriteAllowed }     = object []
+  toJSON PutSecretOptions { cas = CreateOnly }       = object [ "cas" .= Number 0.0 ]
+  toJSON PutSecretOptions { cas = CurrentVersion v } = object [ "cas" .= Number (read (show v) :: Scientific) ]
 
 data PutSecretRequestBody =
   PutSecretRequestBody
     { options  :: PutSecretOptions
-    , put_data :: SecretData }
+    , put_data :: SecretData
+    }
 
 instance ToJSON PutSecretRequestBody where
   toJSON (PutSecretRequestBody os sd) =
     object
-      [ "options" .= os,
-        "data"    .= sd ]
-
+      [ "options" .= os
+      , "data"    .= sd
+      ]
+{-
 data ResponseData =
   ResponseData
     { secret_data     :: SecretData
@@ -93,11 +95,26 @@ instance FromJSON ResponseData where
   parseJSON =
     genericParseJSON
       defaultOptions { fieldLabelModifier = toJSONName }
+-}
 
-data VaultItem = Key T.Text
-              | Folder T.Text
-              deriving (Show) 
+data VaultItem
+  = Key T.Text
+  | Folder T.Text
+  deriving (Show) 
 
+{-
+
+instance FromJSON VaultItem where
+  parseJSON (Object o) 
+  parseJSON (A.Object v) = do
+    ar <- v A..: "keys"
+    return listKeys V.toList ar
+  parseJSON _ = mzero
+
+Right (Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("keys",Array [String "dfdfg",String "sdf",String "sub/"])])),("request_id",String "e14a36ca-2893-2526-f976-0a7b9d4735c2"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)]))
+
+-}
+{-
 data VaultResponse =
   VaultResponse
     { lease_duration :: Int
@@ -128,13 +145,14 @@ data VaultAuth =
     , externalNamespacePolicies :: Maybe (HashMap T.Text T.Text)
     , auth_metadata             :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
-
-splitKeys :: [T.Text] -> [VaultItem]
-splitKeys =
-  P.foldl isFolder mempty
+-}
+listKeys :: [A.Value] -> ([VaultItem],[VaultItem])
+listKeys =
+  foldl lks ([],[])
   where
-  isFolder l t =
-    if T.last t == '/'
-      then l <> [Folder t]
-      else l <> [Key t]
+    lks (ks,fs) (String t) =
+      if T.last t == '/'
+        then (ks,fs++[Folder t])
+        else (ks++[Key t],fs)
+    lks p       _          = p
 
