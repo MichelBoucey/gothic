@@ -1,4 +1,4 @@
-name:                Gothic
+name:                gothic
 version:             0.1.0
 synopsis:            A Haskell Vault KV v2 secret engine client
 description:         A Haskell Hashicorp Vault KV v2 secret engine client library
@@ -26,6 +26,7 @@ library
                     , base >= 4.8.1.0 && < 5
                     , connection
                     , exceptions
+                    , http-conduit
                     , http-client
                     , http-client-tls
                     , http-types

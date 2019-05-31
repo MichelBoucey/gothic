@@ -42,6 +42,7 @@ import qualified Data.Maybe                          as M
 import qualified Data.Vector                         as V (fromList)
 import           Network.Connection 
 import           Network.HTTP.Client
+import           Network.HTTP.Simple
 import           Network.HTTP.Client.TLS
 import           System.Environment                  (lookupEnv)
 import           System.Posix.Files                  (fileExist)
@@ -99,10 +100,8 @@ getSecret :: VaultConnection
           -> SecretVersion
           -> IO (Either String A.Value)
 getSecret VaultConnection{..} (SecretPath sp) sv = do
-  request <-
-    parseRequest $
-      concat [ vaultAddr, "/v1/", secretsEnginePath, "data/", sp, queryString sv ]
-  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
+  parseRequest (concat [vaultAddr, "/v1/", secretsEnginePath, "data/", sp, queryString sv])
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
   where
     queryString LatestVersion = mempty
     queryString (Version v)   = "?version=" ++ show v
@@ -114,11 +113,8 @@ putSecret :: VaultConnection
           -> SecretData
           -> IO (Either String A.Value)
 putSecret VaultConnection{..} cas (SecretPath sp) sd = do
-  let rb = RequestBodyLBS $ A.encode PutSecretRequestBody { options = PutSecretOptions { cas = cas }, put_data = sd }
-  request <-
-    parseRequest $
-      concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ]
-  runRequest request { requestHeaders = vaultHeaders vaultToken, requestBody = rb } manager
+  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ])
+  >>= runRequest manager . setRequestHeaders [("Content-Type", "application/json; charset=utf-8"), ("X-Vault-Token", vaultToken)] . setRequestBodyJSON (PutSecretRequestBody { options = PutSecretOptions { cas = cas }, put_data = sd })
 
 {- 
 putSecret -> (Version 1.0)
@@ -133,8 +129,8 @@ deleteSecret :: VaultConnection
              -> SecretPath
              -> IO (Either String A.Value)
 deleteSecret VaultConnection{..} (SecretPath sp) = do
-  request <- parseRequest $ concat [ "DELETE ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ]
-  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
+  parseRequest $ concat [ "DELETE ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ]
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 deleteSecretVersions :: VaultConnection
                      -> SecretPath
@@ -142,7 +138,7 @@ deleteSecretVersions :: VaultConnection
                      -> IO (Either String A.Value)
 deleteSecretVersions VaultConnection{..} (SecretPath sp) vs = do
   request <- parseRequest $ concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp ]
-  runRequest request { requestHeaders = vaultHeaders vaultToken, requestBody = RequestBodyLBS (A.encode vs) } manager
+  runRequest manager request { requestHeaders = vaultHeaders vaultToken, requestBody = RequestBodyLBS (A.encode vs) }
 
 unDeleteSecretVersions :: VaultConnection
                        -> SecretPath
@@ -151,18 +147,18 @@ unDeleteSecretVersions :: VaultConnection
 unDeleteSecretVersions VaultConnection{..} (SecretPath sp) vs = do
   request <- parseRequest $ concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp ]
   runRequest
+    manager
     request
       { requestHeaders = vaultHeaders vaultToken
       , requestBody = RequestBodyLBS (A.encode vs)
       }
-    manager
 
 destroySecret :: VaultConnection
               -> SecretPath
               -> IO (Either String A.Value)
-destroySecret VaultConnection{..} (SecretPath sp) = do
-  request <- parseRequest $ concat [ "DELETE ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
-  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
+destroySecret VaultConnection{..} (SecretPath sp) =
+  parseRequest (concat ["DELETE ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 destroySecretVersions :: VaultConnection
                       -> SecretPath
@@ -171,26 +167,30 @@ destroySecretVersions :: VaultConnection
 destroySecretVersions VaultConnection{..} (SecretPath sp) vs = do
   request <- parseRequest $ concat [ "POST ", vaultAddr, "/v1/", secretsEnginePath, "destroy/", sp ]
   runRequest
+    manager
     request
       { requestHeaders = vaultHeaders vaultToken
       , requestBody = RequestBodyLBS (A.encode vs)
       }
-    manager
 
 secretsList :: VaultConnection
             -> SecretPath
             -> IO (Either String A.Value)
-secretsList VaultConnection{..} (SecretPath sp) = do
-  request <- parseRequest $ concat [ "LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
-  runRequest request { requestHeaders = vaultHeaders vaultToken } manager
+secretsList VaultConnection{..} (SecretPath sp) =
+  parseRequest (concat ["LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 readSecretMetadata :: VaultConnection
-            -> SecretPath
-            -> IO (Either String A.Value)
-readSecretMetadata VaultConnection{..} (SecretPath sp) = do
+                   -> SecretPath
+                   -> IO (Either String A.Value)
+readSecretMetadata VaultConnection{..} (SecretPath sp) =
+  parseRequest (concat ["GET ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
+
+{-
   request <- parseRequest $ concat [ "GET ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]
   runRequest request { requestHeaders = vaultHeaders vaultToken } manager
-
+-}
 -- updateSecretMetadata = undefined
 
 -- Utils
@@ -201,7 +201,7 @@ secret (Left s) = return (Left s)
 secret (Right v) =
  return $
    case v ^? key "data" . key "data" of
-     Just o  ->
+     Just o ->
        case A.fromJSON o :: A.Result SecretData of
          A.Success sd -> Right sd
          A.Error e    -> Left e
