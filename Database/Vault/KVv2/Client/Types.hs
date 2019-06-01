@@ -4,7 +4,7 @@
 
 module Database.Vault.KVv2.Client.Types where
 
-import           Data.Aeson                    as A
+import           Data.Aeson
 import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
 import           Data.Scientific
@@ -146,7 +146,7 @@ data VaultAuth =
     , auth_metadata             :: Maybe (HashMap T.Text T.Text)
     } deriving (Show, Generic, ToJSON, FromJSON)
 -}
-listKeys :: [A.Value] -> ([VaultItem],[VaultItem])
+listKeys :: [Value] -> ([VaultItem],[VaultItem])
 listKeys =
   foldl lks ([],[])
   where
