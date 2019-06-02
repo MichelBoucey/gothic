@@ -5,11 +5,12 @@ module Database.Vault.KVv2.Client (
 
   -- * Connection and configure Vault KV v2 Engine
   vaultConnect,
-  configKVEngine,
+  kvEngineConfig,
 
   -- * Basic operations
   getSecret,
   putSecret,
+  updateSecretMetadata,
 
   -- * Soft secret deletion
   deleteSecret,
@@ -97,10 +98,14 @@ vaultConnect mva sep mvt dcv = do
         }
     ) <$> evt
 
-configKVEngine :: Int  -- ^ Max versions
-               -> Bool -- ^ CAS required
-               -> IO (Either String A.Value)
-configKVEngine = undefined  -- TODO -> KVv2Config type
+kvEngineConfig
+  :: VaultConnection
+  -> Int                        -- ^ Max versions
+  -> Bool                       -- ^ CAS required
+  -> IO (Either String A.Value)
+kvEngineConfig VaultConnection{..} mvs casr =
+  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "config"])
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken) . setRequestBodyJSON SecretSettings {  max_versions = mvs, cas_required = casr }
 
 -- | Get a secret from Vault.
 getSecret
@@ -180,7 +185,7 @@ destroySecretVersions VaultConnection{..} (SecretPath sp) vs =
 
 secretsList
   :: VaultConnection
-  -> SecretPath
+  -> SecretPath -- TODO -> Must be a "folder/"
   -> IO (Either String A.Value)
 secretsList VaultConnection{..} (SecretPath sp) =
   parseRequest (concat ["LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
@@ -194,7 +199,15 @@ readSecretMetadata VaultConnection{..} (SecretPath sp) =
   parseRequest (concat ["GET ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
--- updateSecretMetadata = undefined
+updateSecretMetadata
+  :: VaultConnection
+  -> SecretPath
+  -> Int                        -- ^ Max versions
+  -> Bool                       -- ^ CAS required
+  -> IO (Either String A.Value)
+updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr =
+  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
+  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken) . setRequestBodyJSON SecretSettings {  max_versions = mvs, cas_required = casr }
 
 -- Utils
 
@@ -216,7 +229,4 @@ toSecretData l = SecretData (HM.fromList l)
 
 toSecretVersions :: [Int] -> SecretVersions
 toSecretVersions is = SecretVersions $ V.fromList $ A.toJSON <$> is
-{-
-isDestroyed :: Either String A.Value -> IO (Either String Bool)
-isDestroyed = undefined
--}
+

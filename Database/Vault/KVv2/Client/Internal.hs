@@ -15,9 +15,10 @@ import qualified Data.Maybe                as M
 import           Network.HTTP.Client
 import           Network.HTTP.Types.Header
 
-runRequest :: Manager
-           -> Request
-           -> IO (Either String A.Value)
+runRequest
+  :: Manager
+  -> Request
+  -> IO (Either String A.Value)
 runRequest m r =
   try (httpLbs r m) >>= \t -> pure $
     case t of
