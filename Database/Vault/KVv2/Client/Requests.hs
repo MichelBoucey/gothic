@@ -8,22 +8,22 @@ module Database.Vault.KVv2.Client.Requests (
   kvEngineConfig,
 
   -- * Basic operations
-  getSecret,
-  putSecret,
-  updateSecretMetadata,
+  getSecretR,
+  putSecretR,
+  updateSecretMetadataR,
 
   -- * Soft secret deletion
-  deleteSecret,
-  deleteSecretVersions,
-  unDeleteSecretVersions,
+  deleteSecretR,
+  deleteSecretVersionsR,
+  unDeleteSecretVersionsR,
 
   -- * Permanent secret deletion
-  destroySecret,
-  destroySecretVersions,
+  destroySecretR,
+  destroySecretVersionsR,
 
   -- * Get information
-  readSecretMetadata,
-  secretsList,
+  readSecretMetadataR,
+  secretsListR,
 
   -- * Utils
   secret,
@@ -114,12 +114,12 @@ kvEngineConfig VaultConnection{..} mvs casr =
           }
 
 -- | Get a secret from Vault.
-getSecret
+getSecretR
   :: VaultConnection
   -> SecretPath
   -> SecretVersion
   -> IO (Either String A.Value)
-getSecret VaultConnection{..} (SecretPath sp) sv =
+getSecretR VaultConnection{..} (SecretPath sp) sv =
   parseRequest (concat [vaultAddr, "/v1/", secretsEnginePath, "data/", sp, queryString sv])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
   where
@@ -127,13 +127,13 @@ getSecret VaultConnection{..} (SecretPath sp) sv =
     queryString (Version v)   = "?version=" ++ show v
 
 -- | Put a secret in Vault.
-putSecret
+putSecretR
   :: VaultConnection
   -> CheckAndSet
   -> SecretPath
   -> SecretData
   -> IO (Either String A.Value)
-putSecret VaultConnection{..} cas (SecretPath sp) sd =
+putSecretR VaultConnection{..} cas (SecretPath sp) sd =
   parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ])
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
@@ -144,88 +144,88 @@ putSecret VaultConnection{..} cas (SecretPath sp) sd =
           }
 
 {- 
-putSecret -> (Version 1.0)
+putSecretR -> (Version 1.0)
 Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("version",Number 1.0),("created_time",String "2019-05-14T20:54:20.519889313Z")])),("request_id",String "52c3a8a0-1409-c41c-ba94-6eab8a4e4420"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)])
 
 
-putSecret conn CreateOnly (SecretPath "Bob") (toSecretData [("Square","PANTS")])
+putSecretR conn CreateOnly (SecretPath "Bob") (toSecretData [("Square","PANTS")])
 Right (Object (fromList [("errors",Array [String "check-and-set parameter did not match the current version"])]))
 -}
 
-deleteSecret
+deleteSecretR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-deleteSecret VaultConnection{..} (SecretPath sp) =
+deleteSecretR VaultConnection{..} (SecretPath sp) =
   parseRequest (concat ["DELETE ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
-deleteSecretVersions
+deleteSecretVersionsR
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
   -> IO (Either String A.Value)
-deleteSecretVersions VaultConnection{..} (SecretPath sp) vs =
+deleteSecretVersionsR VaultConnection{..} (SecretPath sp) vs =
   parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp])
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBody (RequestBodyLBS $ A.encode vs)
 
-unDeleteSecretVersions
+unDeleteSecretVersionsR
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
   -> IO (Either String A.Value)
-unDeleteSecretVersions VaultConnection{..} (SecretPath sp) vs =
+unDeleteSecretVersionsR VaultConnection{..} (SecretPath sp) vs =
   parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp])
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBody (RequestBodyLBS $ A.encode vs)
 
-destroySecret
+destroySecretR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-destroySecret VaultConnection{..} (SecretPath sp) =
+destroySecretR VaultConnection{..} (SecretPath sp) =
   parseRequest (concat ["DELETE ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
-destroySecretVersions
+destroySecretVersionsR
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
   -> IO (Either String A.Value)
-destroySecretVersions VaultConnection{..} (SecretPath sp) vs =
+destroySecretVersionsR VaultConnection{..} (SecretPath sp) vs =
   parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "destroy/", sp])
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBody (RequestBodyLBS $ A.encode vs)
 
-secretsList
+secretsListR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-secretsList VaultConnection{..} (SecretPath sp) =
+secretsListR VaultConnection{..} (SecretPath sp) =
   if last sp /= '/'
     then return (Left "SecretPath must be a folder/")
     else parseRequest (concat ["LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
          >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
-readSecretMetadata
+readSecretMetadataR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-readSecretMetadata VaultConnection{..} (SecretPath sp) =
+readSecretMetadataR VaultConnection{..} (SecretPath sp) =
   parseRequest (concat ["GET ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
-updateSecretMetadata
+updateSecretMetadataR
   :: VaultConnection
   -> SecretPath
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
-updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr =
+updateSecretMetadataR VaultConnection{..} (SecretPath sp) mvs casr =
   parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
