@@ -18,9 +18,10 @@ Source-Repository head
   Location: https://github.com/MichelBoucey/Gothic
 
 library
-  exposed-modules:    Database.Vault.KVv2.Client.Requests
-                    , Database.Vault.KVv2.Client.Types
+  exposed-modules:    Database.Vault.KVv2.Client
                     , Database.Vault.KVv2.Client.Internal
+                    , Database.Vault.KVv2.Client.Requests
+                    , Database.Vault.KVv2.Client.Types
   other-extensions:   OverloadedStrings
   build-depends:      aeson >= 0.8.0.2 && < 1.5
                     , base >= 4.8.1.0 && < 5

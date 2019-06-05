@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Database.Vault.KVv2.Client.Requests (
+module Database.Vault.KVv2.Client (
 
   -- * Connection and configure Vault KV v2 Engine
   vaultConnect,
@@ -9,6 +9,7 @@ module Database.Vault.KVv2.Client.Requests (
 
   -- * Basic operations
   getSecret,
+{-
   putSecret,
   updateSecretMetadata,
 
@@ -24,7 +25,7 @@ module Database.Vault.KVv2.Client.Requests (
   -- * Get information
   readSecretMetadata,
   secretsList,
-
+-}
   -- * Utils
   secret,
   toSecretData,
@@ -37,14 +38,13 @@ import qualified Data.Aeson                          as A
 import           Data.Aeson.Lens
 import qualified Data.ByteString                     as B
 import qualified Data.ByteString.Char8               as C
-import qualified Data.Text                           as T
-import qualified Data.HashMap.Strict                 as HM
+-- import qualified Data.Text                           as T
+-- import qualified Data.HashMap.Strict                 as HM
 import qualified Data.Maybe                          as M
-import qualified Data.Vector                         as V (fromList)
+-- import qualified Data.Vector                         as V (fromList)
 import           Network.Connection 
 import           Network.HTTP.Client
-import           Network.HTTP.Simple                 ( setRequestBody
-                                                     , setRequestHeaders
+import           Network.HTTP.Simple                 ( setRequestHeaders
                                                      , setRequestBodyJSON
                                                      )
 import           Network.HTTP.Client.TLS
@@ -53,6 +53,7 @@ import           System.Posix.Files                  (fileExist)
 
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
+import           Database.Vault.KVv2.Client.Requests
 
 -- | Get a 'VaultConnection' or an error message.
 vaultConnect
@@ -118,13 +119,11 @@ getSecret
   :: VaultConnection
   -> SecretPath
   -> SecretVersion
-  -> IO (Either String A.Value)
-getSecret VaultConnection{..} (SecretPath sp) sv =
-  parseRequest (concat [vaultAddr, "/v1/", secretsEnginePath, "data/", sp, queryString sv])
-  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
-  where
-    queryString LatestVersion = mempty
-    queryString (Version v)   = "?version=" ++ show v
+  -> IO (Either String SecretData)
+getSecret vc sp sv =
+  getSecretR vc sp sv >>= secret
+
+{-
 
 -- | Put a secret in Vault.
 putSecret
@@ -142,15 +141,6 @@ putSecret VaultConnection{..} cas (SecretPath sp) sd =
           { options = PutSecretOptions { cas = cas }
           , put_data = sd
           }
-
-{- 
-putSecret -> (Version 1.0)
-Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("version",Number 1.0),("created_time",String "2019-05-14T20:54:20.519889313Z")])),("request_id",String "52c3a8a0-1409-c41c-ba94-6eab8a4e4420"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)])
-
-
-putSecret conn CreateOnly (SecretPath "Bob") (toSecretData [("Square","PANTS")])
-Right (Object (fromList [("errors",Array [String "check-and-set parameter did not match the current version"])]))
--}
 
 deleteSecret
   :: VaultConnection
@@ -234,7 +224,7 @@ updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr =
           { max_versions = mvs
           , cas_required = casr
           }
-
+-}
 -- Utils
 
 secret
@@ -249,10 +239,10 @@ secret (Right v) =
          A.Success sd -> Right sd
          A.Error e    -> Left e
      Nothing -> Left "Not a secret data JSON object"
-
+{-
 toSecretData :: [(T.Text,T.Text)] -> SecretData
 toSecretData l = SecretData (HM.fromList l)
 
 toSecretVersions :: [Int] -> SecretVersions
 toSecretVersions is = SecretVersions $ V.fromList $ A.toJSON <$> is
-
+-}

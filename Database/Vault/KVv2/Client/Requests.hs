@@ -4,9 +4,10 @@
 module Database.Vault.KVv2.Client.Requests (
 
   -- * Connection and configure Vault KV v2 Engine
+{-
   vaultConnect,
   kvEngineConfig,
-
+-}
   -- * Basic operations
   getSecretR,
   putSecretR,
@@ -26,7 +27,7 @@ module Database.Vault.KVv2.Client.Requests (
   secretsListR,
 
   -- * Utils
-  secret,
+--   secret,
   toSecretData,
   toSecretVersions,
 
@@ -53,7 +54,7 @@ import           System.Posix.Files                  (fileExist)
 
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
-
+{-
 -- | Get a 'VaultConnection' or an error message.
 vaultConnect
   :: Maybe String                       -- ^ Use Just this string as Vault address or get it from VAULT_ADDR
@@ -112,7 +113,7 @@ kvEngineConfig VaultConnection{..} mvs casr =
           {  max_versions = mvs
           , cas_required = casr
           }
-
+-}
 -- | Get a secret from Vault.
 getSecretR
   :: VaultConnection
@@ -236,7 +237,7 @@ updateSecretMetadataR VaultConnection{..} (SecretPath sp) mvs casr =
           }
 
 -- Utils
-
+{-
 secret
   :: Either String A.Value
   -> IO (Either String SecretData)
@@ -249,7 +250,7 @@ secret (Right v) =
          A.Success sd -> Right sd
          A.Error e    -> Left e
      Nothing -> Left "Not a secret data JSON object"
-
+-}
 toSecretData :: [(T.Text,T.Text)] -> SecretData
 toSecretData l = SecretData (HM.fromList l)
 
