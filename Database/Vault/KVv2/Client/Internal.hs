@@ -2,11 +2,11 @@
 
 module Database.Vault.KVv2.Client.Internal (
 
-  runRequest,
-  vaultHeaders,
-  toJSONName
+    runRequest,
+    vaultHeaders,
+    toJSONName
 
-) where
+  ) where
 
 import           Control.Monad.Catch
 import qualified Data.ByteString           as B
@@ -20,14 +20,17 @@ runRequest
   -> Request
   -> IO (Either String A.Value)
 runRequest m r =
-  try (httpLbs r m) >>= \t -> pure $
+  esv <$> try (httpLbs r m)
+  where
+  esv t =
     case t of
       Right b ->
-        Right (M.fromMaybe A.Null $ A.decode $ responseBody b)
-      Left  e -> Left $ "error: " ++ show (e::SomeException)
+        return (M.fromMaybe A.Null $ A.decode $ responseBody b)
+      Left  e -> fail $ show (e::SomeException)
 
-vaultHeaders :: B.ByteString -- ^ Vault token
-             -> [(HeaderName, B.ByteString)]
+vaultHeaders
+  :: B.ByteString -- ^ Vault token
+  -> [(HeaderName, B.ByteString)]
 vaultHeaders vt =
   [ ("Content-Type", "application/json; charset=utf-8")
   , ("X-Vault-Token", vt)

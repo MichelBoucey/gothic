@@ -3,45 +3,45 @@
 
 module Database.Vault.KVv2.Client (
 
-  -- * Connection and configure Vault KV v2 Engine
-  vaultConnect,
-  kvEngineConfig,
-
-  -- * Basic operations
-  getSecret,
+    -- * Connection and configure Vault KV v2 Engine
+    vaultConnect,
+    kvEngineConfig,
+  
+    -- * Basic operations
+    getSecret,
 {-
-  putSecret,
-  updateSecretMetadata,
-
-  -- * Soft secret deletion
-  deleteSecret,
-  deleteSecretVersions,
-  unDeleteSecretVersions,
-
-  -- * Permanent secret deletion
-  destroySecret,
-  destroySecretVersions,
-
-  -- * Get information
-  readSecretMetadata,
-  secretsList,
+    putSecret,
+    updateSecretMetadata,
+  
+    -- * Soft secret deletion
+    deleteSecret,
+    deleteSecretVersions,
+    unDeleteSecretVersions,
+  
+    -- * Permanent secret deletion
+    destroySecret,
+    destroySecretVersions,
+  
+    -- * Get information
+    readSecretMetadata,
+    secretsList,
 -}
-  -- * Utils
-  secret,
-  toSecretData,
-  toSecretVersions,
+    -- * Utils
+    secret,
+    toSecretData,
+    toSecretVersions,
 
-) where
+  ) where
 
 import           Control.Lens
 import qualified Data.Aeson                          as A
 import           Data.Aeson.Lens
 import qualified Data.ByteString                     as B
 import qualified Data.ByteString.Char8               as C
--- import qualified Data.Text                           as T
--- import qualified Data.HashMap.Strict                 as HM
+import qualified Data.Text                           as T
+import qualified Data.HashMap.Strict                 as HM
 import qualified Data.Maybe                          as M
--- import qualified Data.Vector                         as V (fromList)
+import qualified Data.Vector                         as V (fromList)
 import           Network.Connection 
 import           Network.HTTP.Client
 import           Network.HTTP.Simple                 ( setRequestHeaders
@@ -121,7 +121,7 @@ getSecret
   -> SecretVersion
   -> IO (Either String SecretData)
 getSecret vc sp sv =
-  getSecretR vc sp sv >>= secret
+  secret <$> getSecretR vc sp sv
 
 {-
 
@@ -131,24 +131,14 @@ putSecret
   -> CheckAndSet
   -> SecretPath
   -> SecretData
-  -> IO (Either String A.Value)
+  -> IO (Either String ?) -- ("version",Number 3.0)
 putSecret VaultConnection{..} cas (SecretPath sp) sd =
-  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp ])
-  >>= runRequest manager
-    . setRequestHeaders (vaultHeaders vaultToken)
-    . setRequestBodyJSON
-        PutSecretRequestBody
-          { options = PutSecretOptions { cas = cas }
-          , put_data = sd
-          }
 
 deleteSecret
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
 deleteSecret VaultConnection{..} (SecretPath sp) =
-  parseRequest (concat ["DELETE ", vaultAddr, "/v1/", secretsEnginePath, "data/", sp])
-  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 deleteSecretVersions
   :: VaultConnection
@@ -156,10 +146,6 @@ deleteSecretVersions
   -> SecretVersions
   -> IO (Either String A.Value)
 deleteSecretVersions VaultConnection{..} (SecretPath sp) vs =
-  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp])
-  >>= runRequest manager
-    . setRequestHeaders (vaultHeaders vaultToken)
-    . setRequestBody (RequestBodyLBS $ A.encode vs)
 
 unDeleteSecretVersions
   :: VaultConnection
@@ -167,18 +153,12 @@ unDeleteSecretVersions
   -> SecretVersions
   -> IO (Either String A.Value)
 unDeleteSecretVersions VaultConnection{..} (SecretPath sp) vs =
-  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp])
-  >>= runRequest manager
-    . setRequestHeaders (vaultHeaders vaultToken)
-    . setRequestBody (RequestBodyLBS $ A.encode vs)
 
 destroySecret
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
 destroySecret VaultConnection{..} (SecretPath sp) =
-  parseRequest (concat ["DELETE ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
-  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 destroySecretVersions
   :: VaultConnection
@@ -186,28 +166,18 @@ destroySecretVersions
   -> SecretVersions
   -> IO (Either String A.Value)
 destroySecretVersions VaultConnection{..} (SecretPath sp) vs =
-  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "destroy/", sp])
-  >>= runRequest manager
-    . setRequestHeaders (vaultHeaders vaultToken)
-    . setRequestBody (RequestBodyLBS $ A.encode vs)
 
 secretsList
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
 secretsList VaultConnection{..} (SecretPath sp) =
-  if last sp /= '/'
-    then return (Left "SecretPath must be a folder/")
-    else parseRequest (concat ["LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
-         >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 readSecretMetadata
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
 readSecretMetadata VaultConnection{..} (SecretPath sp) =
-  parseRequest (concat ["GET ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
-  >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 updateSecretMetadata
   :: VaultConnection
@@ -216,33 +186,29 @@ updateSecretMetadata
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
 updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr =
-  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
-  >>= runRequest manager
-    . setRequestHeaders (vaultHeaders vaultToken)
-    . setRequestBodyJSON
-        SecretSettings
-          { max_versions = mvs
-          , cas_required = casr
-          }
 -}
--- Utils
 
+-- TODO -> getSecretR "*** Exception: expected HashMap ~Text v, encountered Null" after deleteSecretR (latestVersion)
 secret
   :: Either String A.Value
-  -> IO (Either String SecretData)
-secret (Left s) = return (Left s)
+  -> Either String SecretData
+secret (Left s) = fail s
 secret (Right v) =
- return $
-   case v ^? key "data" . key "data" of
-     Just o ->
-       case A.fromJSON o of
-         A.Success sd -> Right sd
-         A.Error e    -> Left e
-     Nothing -> Left "Not a secret data JSON object"
-{-
-toSecretData :: [(T.Text,T.Text)] -> SecretData
-toSecretData l = SecretData (HM.fromList l)
+  case v ^? key "data" . key "data" of
+    Just o  ->
+      case A.fromJSON o of
+        A.Success sd -> return sd --case Value == Null -> fail
+        A.Error e    -> fail e
+    Nothing -> fail "Not a secret data JSON object"
+
+-- Utils
+
+toSecretData
+  :: [(T.Text,T.Text)]
+  -> SecretData
+toSecretData l =
+  SecretData (HM.fromList l)
 
 toSecretVersions :: [Int] -> SecretVersions
 toSecretVersions is = SecretVersions $ V.fromList $ A.toJSON <$> is
--}
+
