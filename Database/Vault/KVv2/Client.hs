@@ -33,9 +33,7 @@ module Database.Vault.KVv2.Client (
 
   ) where
 
-import           Control.Lens
 import qualified Data.Aeson                          as A
-import           Data.Aeson.Lens
 import qualified Data.ByteString                     as B
 import qualified Data.ByteString.Char8               as C
 import qualified Data.Text                           as T
@@ -53,6 +51,7 @@ import           System.Posix.Files                  (fileExist)
 
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
+import           Database.Vault.KVv2.Client.Lens
 import           Database.Vault.KVv2.Client.Requests
 
 -- | Get a 'VaultConnection' or an error message.
@@ -187,19 +186,6 @@ updateSecretMetadata
   -> IO (Either String A.Value)
 updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr =
 -}
-
--- TODO -> getSecretR "*** Exception: expected HashMap ~Text v, encountered Null" after deleteSecretR (latestVersion)
-secret
-  :: Either String A.Value
-  -> Either String SecretData
-secret (Left s) = fail s
-secret (Right v) =
-  case v ^? key "data" . key "data" of
-    Just o  ->
-      case A.fromJSON o of
-        A.Success sd -> return sd --case Value == Null -> fail
-        A.Error e    -> fail e
-    Nothing -> fail "Not a secret data JSON object"
 
 -- Utils
 
