@@ -87,25 +87,3 @@ data VaultKey
   | VaultFolder T.Text
   deriving (Show) 
 
-{-
-
-instance FromJSON VaultKey where
-  parseJSON (Object o) 
-  parseJSON (A.Object v) = do
-    ar <- v A..: "keys"
-    return listKeys V.toList ar
-  parseJSON _ = mzero
-Right (Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("keys",Array [String "dfdfg",String "sdf",String "sub/"])])),("request_id",String "e14a36ca-2893-2526-f976-0a7b9d4735c2"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)]))
-
--}
-
-listKeys :: [Value] -> ([VaultKey],[VaultKey])
-listKeys =
-  foldl lks ([],[])
-  where
-    lks (ks,fs) (String t) =
-      if T.last t == '/'
-        then (ks,fs++[VaultFolder t])
-        else (ks++[VaultKey t],fs)
-    lks p       _          = p
-

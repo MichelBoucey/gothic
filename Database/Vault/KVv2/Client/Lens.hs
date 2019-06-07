@@ -9,6 +9,7 @@ module Database.Vault.KVv2.Client.Lens (
 import           Control.Lens
 import qualified Data.Aeson                       as A
 import           Data.Aeson.Lens
+-- import           Data.Text                        as T hiding (foldl)
 
 import           Database.Vault.KVv2.Client.Types
 
@@ -25,3 +26,14 @@ secret (Right v) =
         A.Error e    -> fail e
     Nothing -> fail "Not a secret data JSON object"
 
+{-
+listKeys :: [A.Value] -> ([VaultKey],[VaultKey])
+listKeys =
+  foldl lks ([],[])
+  where
+    lks (ks,fs) (A.String t) =
+      if T.last t == '/'
+        then (ks,fs++[VaultFolder t])
+        else (ks++[VaultKey t],fs)
+    lks p       _          = p
+-}
