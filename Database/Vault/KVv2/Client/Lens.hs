@@ -4,6 +4,7 @@ module Database.Vault.KVv2.Client.Lens (
 
     secret,
     version,
+    list,
 
   ) where
 
@@ -11,7 +12,8 @@ import           Control.Lens
 import qualified Data.Aeson                       as A
 import           Data.Aeson.Lens
 import           Data.Scientific
--- import           Data.Text                        as T hiding (foldl)
+import           Data.Text                        as T
+import qualified Data.Vector                      as V
 
 import           Database.Vault.KVv2.Client.Types
 
@@ -38,14 +40,22 @@ version (Right v) =
     Just _            -> fail "No secret version JSON field"
     Nothing           -> fail "No secret version JSON field"
 
-{-
-listKeys :: [A.Value] -> ([VaultKey],[VaultKey])
-listKeys =
-  foldl lks ([],[])
+list
+  :: Either String A.Value
+  -> Either String [VaultKey]
+list (Left s) = fail s
+list (Right v) =
+  case v ^? key "data" . key "keys" of
+    Just (A.Array a)  -> return (listKeys a)
+    Just _            -> Left "No secret data JSON object"
+    Nothing           -> Left "No secret data JSON object"
   where
-    lks (ks,fs) (A.String t) =
-      if T.last t == '/'
-        then (ks,fs++[VaultFolder t])
-        else (ks++[VaultKey t],fs)
-    lks p       _          = p
--}
+  listKeys =
+    V.foldl lks mempty
+    where
+      lks ks (A.String t) =
+        if T.last t == '/'
+          then ks <> [VaultFolder t]
+          else ks <> [VaultKey t]
+      lks p       _       = p
+ 

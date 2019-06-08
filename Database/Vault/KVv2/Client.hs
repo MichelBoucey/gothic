@@ -24,10 +24,10 @@ module Database.Vault.KVv2.Client (
   
     -- * Get information
     readSecretMetadata,
-    secretsList,
 -}
+    secretsList,
+
     -- * Utils
-    secret,
     toSecretData,
     toSecretVersions,
 
@@ -165,13 +165,14 @@ destroySecretVersions
   -> SecretVersions
   -> IO (Either String A.Value)
 destroySecretVersions VaultConnection{..} (SecretPath sp) vs =
-
+-}
 secretsList
   :: VaultConnection
   -> SecretPath
-  -> IO (Either String A.Value)
-secretsList VaultConnection{..} (SecretPath sp) =
-
+  -> IO (Either String [VaultKey])
+secretsList vc sp =
+  list <$> secretsListR vc sp
+{-
 readSecretMetadata
   :: VaultConnection
   -> SecretPath
