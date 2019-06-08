@@ -2,13 +2,15 @@
 
 module Database.Vault.KVv2.Client.Lens (
 
-    secret
+    secret,
+    version,
 
   ) where
 
 import           Control.Lens
 import qualified Data.Aeson                       as A
 import           Data.Aeson.Lens
+import           Data.Scientific
 -- import           Data.Text                        as T hiding (foldl)
 
 import           Database.Vault.KVv2.Client.Types
@@ -22,9 +24,19 @@ secret (Right v) =
   case v ^? key "data" . key "data" of
     Just o  ->
       case A.fromJSON o of
-        A.Success sd -> return sd --case Value == Null -> fail
-        A.Error e    -> fail e
-    Nothing -> fail "Not a secret data JSON object"
+        A.Success sd -> Right sd -- TODO -> case Value == Null -> fail
+        A.Error e    -> Left e
+    Nothing -> Left "No secret data JSON object"
+
+version
+  :: Either String A.Value
+  -> Either String SecretVersion
+version (Left s) = fail s
+version (Right v) =
+  case v ^? key "data" . key "version" of
+    Just (A.Number n) -> return (Version $ base10Exponent n)
+    Just _            -> fail "No secret version JSON field"
+    Nothing           -> fail "No secret version JSON field"
 
 {-
 listKeys :: [A.Value] -> ([VaultKey],[VaultKey])

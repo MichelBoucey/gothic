@@ -9,8 +9,8 @@ module Database.Vault.KVv2.Client (
   
     -- * Basic operations
     getSecret,
-{-
     putSecret,
+{-
     updateSecretMetadata,
   
     -- * Soft secret deletion
@@ -122,17 +122,17 @@ getSecret
 getSecret vc sp sv =
   secret <$> getSecretR vc sp sv
 
-{-
-
 -- | Put a secret in Vault.
 putSecret
   :: VaultConnection
   -> CheckAndSet
   -> SecretPath
   -> SecretData
-  -> IO (Either String ?) -- ("version",Number 3.0)
-putSecret VaultConnection{..} cas (SecretPath sp) sd =
+  -> IO (Either String SecretVersion)
+putSecret vc cas sp sd =
+  version <$> putSecretR vc cas sp sd
 
+{-
 deleteSecret
   :: VaultConnection
   -> SecretPath
