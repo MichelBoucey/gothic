@@ -8,9 +8,9 @@ module Database.Vault.KVv2.Client.Requests (
     updateSecretMetadataR,
     deleteSecretR,
     deleteSecretVersionsR,
---    unDeleteSecretVersionsR,
+    unDeleteSecretVersionsR,
     destroySecretR,
---    destroySecretVersionsR,
+    destroySecretVersionsR,
     readSecretMetadataR,
     secretsListR
 
@@ -22,6 +22,7 @@ import           Network.HTTP.Simple                 ( setRequestBody
                                                      , setRequestHeaders
                                                      , setRequestBodyJSON
                                                      )
+
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
 
@@ -52,15 +53,6 @@ putSecretR VaultConnection{..} cas (SecretPath sp) sd =
           , put_data = sd
           }
 
-{- 
-putSecretR -> (Version 1.0)
-Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("version",Number 1.0),("created_time",String "2019-05-14T20:54:20.519889313Z")])),("request_id",String "52c3a8a0-1409-c41c-ba94-6eab8a4e4420"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)])
-
-
-putSecretR conn CreateOnly (SecretPath "Bob") (toSecretData [("Square","PANTS")])
-Right (Object (fromList [("errors",Array [String "check-and-set parameter did not match the current version"])]))
--}
-
 deleteSecretR
   :: VaultConnection
   -> SecretPath
@@ -79,7 +71,7 @@ deleteSecretVersionsR VaultConnection{..} (SecretPath sp) vs =
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBody (RequestBodyLBS $ A.encode vs)
-{-
+
 unDeleteSecretVersionsR
   :: VaultConnection
   -> SecretPath
@@ -90,7 +82,7 @@ unDeleteSecretVersionsR VaultConnection{..} (SecretPath sp) vs =
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBody (RequestBodyLBS $ A.encode vs)
--}
+
 destroySecretR
   :: VaultConnection
   -> SecretPath
@@ -98,7 +90,7 @@ destroySecretR
 destroySecretR VaultConnection{..} (SecretPath sp) =
   parseRequest (concat ["DELETE ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
-{-
+
 destroySecretVersionsR
   :: VaultConnection
   -> SecretPath
@@ -109,7 +101,7 @@ destroySecretVersionsR VaultConnection{..} (SecretPath sp) vs =
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBody (RequestBodyLBS $ A.encode vs)
--}
+
 secretsListR
   :: VaultConnection
   -> SecretPath

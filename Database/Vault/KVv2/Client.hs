@@ -3,7 +3,7 @@
 
 module Database.Vault.KVv2.Client (
 
-    -- * Connection and configure Vault KV v2 Engine
+    -- * Connect and configure Vault KV v2 Engine
     vaultConnect,
     kvEngineConfig,
   
@@ -11,24 +11,25 @@ module Database.Vault.KVv2.Client (
 
     getSecret,
     putSecret,
---    updateSecretMetadata,
   
     -- * Soft secret deletion
---    deleteSecret,
+    deleteSecret,
     deleteSecretVersions,
---    unDeleteSecretVersions,
+    unDeleteSecretVersions,
   
     -- * Permanent secret deletion
---    destroySecret,
---    destroySecretVersions,
+    destroySecretVersions,
+    destroySecret,
   
     -- * Get information
 
+--    secretCurrentVersion
     readSecretMetadata,
+--    updateSecretMetadata,
     secretsList,
 
     -- * Utils
-    -- toSecretData,
+    toSecretData,
     toSecretVersions,
 
   ) where
@@ -36,7 +37,9 @@ module Database.Vault.KVv2.Client (
 import qualified Data.Aeson                          as A
 import qualified Data.ByteString                     as B
 import qualified Data.ByteString.Char8               as C
+import           Data.HashMap.Strict
 import qualified Data.Maybe                          as M
+import           Data.Text                           hiding (concat)
 import           Network.Connection 
 import           Network.HTTP.Client
 import           Network.HTTP.Simple                 ( setRequestHeaders
@@ -129,43 +132,46 @@ putSecret
 putSecret vc cas sp sd =
   version <$> putSecretR vc cas sp sd
 
-{-
-secretCurrentVersion
 
 deleteSecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Either String A.Value)
-deleteSecret VaultConnection{..} (SecretPath sp) =
--}
+  -> IO (Either String A.Value) -- TODO
+deleteSecret vc sp =
+  deleteSecretR vc sp
+
 deleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value)
+  -> IO (Either String A.Value) -- TODO
 deleteSecretVersions vc sp vs =
   deleteSecretVersionsR vc sp vs
-{-
+
 unDeleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value)
-unDeleteSecretVersions VaultConnection{..} (SecretPath sp) vs =
+  -> IO (Either String A.Value) -- TODO
+unDeleteSecretVersions vc sp vs =
+  unDeleteSecretVersionsR vc sp vs
 
 destroySecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Either String A.Value)
-destroySecret VaultConnection{..} (SecretPath sp) =
+  -> IO (Either String A.Value) -- TODO
+destroySecret vc sp =
+  destroySecretR vc sp
 
 destroySecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value)
-destroySecretVersions VaultConnection{..} (SecretPath sp) vs =
--}
+  -> IO (Either String A.Value) -- TODO
+destroySecretVersions vc sp vs =
+  destroySecretVersionsR vc sp vs
+
+-- secretCurrentVersion -- TODO
 
 secretsList
   :: VaultConnection
@@ -181,27 +187,23 @@ readSecretMetadata
 readSecretMetadata vc sp =
   metadata <$> readSecretMetadataR vc sp
 {-
-updateSecretMetadata
+updateSecretMetadata --
   :: VaultConnection
   -> SecretPath
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
-  -> IO (Either String A.Value)
-updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr =
+  -> IO (Either String A.Value) -- TODO
+updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr = undefined
 -}
-
 -- Utils
-{-
+
 toSecretData
-  :: [(T.Text,T.Text)]
+  :: [(Text,Text)]
   -> SecretData
-toSecretData l =
-  SecretData (HM.fromList l)
+toSecretData ps = SecretData (fromList ps)
 
-toSecretVersions :: [Int] -> SecretVersions
-toSecretVersions is = SecretVersions $ V.fromList $ A.toJSON <$> is
--}
-
-toSecretVersions :: [Int] -> SecretVersions
+toSecretVersions
+  :: [Int]
+  -> SecretVersions
 toSecretVersions is = SecretVersions $ (\i -> SecretVersion i) <$> is
 
