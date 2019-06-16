@@ -4,12 +4,14 @@
 
 module Database.Vault.KVv2.Client.Types where
 
+import           Control.Monad
 import           Data.Aeson
 import qualified Data.ByteString               as B
 import           Data.HashMap.Strict
+import           Data.Hashable
 import           Data.Scientific
 import qualified Data.Text                     as T
-import qualified Data.Vector                   as V
+import           Data.Text.Read                (decimal)
 import           GHC.Generics
 import           Network.HTTP.Client           (Manager)
 
@@ -24,23 +26,35 @@ data VaultConnection =
     }
 
 data SecretVersion
-  = LatestVersion
-  | Version !Int
-  deriving (Show)
+  = SecretVersion !Int
+  deriving (Show, Eq, Generic, Hashable)
 
-newtype SecretVersions =
-  SecretVersions (V.Vector Value)
-  deriving (Show)
+data SecretVersions =
+  SecretVersions (HashMap SecretVersion SecretMetadata)
+  deriving (Show, Eq)
 
+instance FromJSON SecretVersions where
+  parseJSON (Object o) =
+    return $ SecretVersions $ fromList $ trans <$> toList o
+    where
+    trans p =
+      case p of
+        (t,j@(Object _)) -> do
+          let Right (i,_) = decimal t
+          let Success sv  = fromJSON j
+          (SecretVersion i,sv)
+        _ -> undefined
+  parseJSON _ = mzero
+
+data SecretMetadata =
+  SecretMetadata 
+    { destroyed     :: Bool
+    , deletion_time :: T.Text
+    , created_time  :: T.Text
+    } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 {-
 Right (Object (fromList [("lease_duration",Number 0.0),("wrap_info",Null),("auth",Null),("data",Object (fromList [("oldest_version",Number 0.0),("versions",Object (fromList [("1",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("created_time",String "2019-06-06T12:50:00.414688723Z")])),("4",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("created_time",String "2019-06-06T13:03:25.138703084Z")])),("2",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("created_time",String "2019-06-06T12:50:40.757429676Z")])),("5",Object (fromList [("destroyed",Bool False),("deletion_time",String ""),("created_time",String "2019-06-06T13:04:02.508429438Z")])),("3",Object (fromList [("destroyed",Bool False),("deletion_time",String "2019-06-06T12:58:54.229644656Z"),("created_time",String "2019-06-06T12:52:18.725352687Z")]))])),("current_version",Number 5.0),("updated_time",String "2019-06-06T13:04:02.508429438Z"),("cas_required",Bool False),("created_time",String "2019-06-06T12:50:00.414688723Z"),("max_versions",Number 0.0)])),("request_id",String "8c9ad99c-b099-10f2-f34e-fa72d9440504"),("warnings",Null),("lease_id",String ""),("renewable",Bool False)]))
 -}
-
-instance ToJSON SecretVersions where
-  toJSON (SecretVersions vs) =
-    object
-      [ "versions" .= Array vs ]
-
 newtype SecretData =
   SecretData
     (HashMap T.Text T.Text)

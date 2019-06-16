@@ -28,6 +28,7 @@ library
                     , base >= 4.8.1.0 && < 5
                     , connection
                     , exceptions
+                    , hashable
                     , http-conduit
                     , http-client
                     , http-client-tls
