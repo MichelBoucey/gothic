@@ -186,6 +186,13 @@ readSecretMetadata
   -> IO (Either String SecretMetadata)
 readSecretMetadata vc sp =
   metadata <$> readSecretMetadataR vc sp
+
+currentVersion
+  :: VaultConnection
+  -> SecretPath
+  -> IO (Either String SecretMetadata)
+currentVersion vc sp =
+  current <$> readSecretMetadataR vc sp
 {-
 updateSecretMetadata --
   :: VaultConnection
@@ -205,5 +212,5 @@ toSecretData ps = SecretData (fromList ps)
 toSecretVersions
   :: [Int]
   -> SecretVersions
-toSecretVersions is = SecretVersions $ (\i -> SecretVersion i) <$> is
+toSecretVersions is = SecretVersions (SecretVersion <$> is)
 

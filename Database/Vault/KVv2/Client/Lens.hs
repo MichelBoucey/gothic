@@ -41,13 +41,23 @@ version (Right v) =
     Just _            -> fail "No secret version JSON field"
     Nothing           -> fail "No secret version JSON field"
 
+current
+  :: Either String A.Value
+  -> Either String SecretVersion
+current (Left s) = fail s
+current (Right v) =
+  case v ^? key "data" . key "current_version" of
+    Just (A.Number n) -> return (SecretVersion $ base10Exponent n)
+    Just _            -> fail "No current secret version JSON field"
+    Nothing           -> fail "No current secret version JSON field"
+
 metadata
   :: Either String A.Value
   -> Either String SecretMetadata
 metadata (Left s) = fail s
 metadata (Right v) =
   case v ^? key "data" . key "versions" of
-    Just (o@(A.Object _)) ->
+    Just o@(A.Object _) ->
       case A.fromJSON o of
         A.Success vs  -> return vs
         A.Error e    -> Left e
