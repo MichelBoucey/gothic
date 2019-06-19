@@ -1,5 +1,6 @@
 
 > "Historically, strongrooms were built in the basement of a bank where the ceilings were vaulted, hence the name."
+
 <div style="text-align: right">Art. "Bank vault", Wikipedia.</div>
 
 ### Gothic, a Haskell client for Vault KV Engine v2 [![Build Status](https://travis-ci.org/MichelBoucey/gothic.svg?branch=master)](https://travis-ci.org/MichelBoucey/gothic)
