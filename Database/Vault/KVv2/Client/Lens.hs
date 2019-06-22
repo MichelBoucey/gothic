@@ -5,20 +5,20 @@ module Database.Vault.KVv2.Client.Lens (
     secret,
     version,
     list,
-    metadata
+    metadata,
+    current
 
   ) where
 
 import           Control.Lens
 import qualified Data.Aeson                       as A
 import           Data.Aeson.Lens
+import           Data.Scientific
 import           Data.Text                        as T
 import qualified Data.Vector                      as V
-import Data.Scientific
 
 import           Database.Vault.KVv2.Client.Types
 
--- TODO -> getSecretR "*** Exception: expected HashMap ~Text v, encountered Null" after deleteSecretR (latestVersion)
 secret
   :: Either String A.Value
   -> Either String SecretData

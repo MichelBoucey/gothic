@@ -3,6 +3,7 @@
 
 module Database.Vault.KVv2.Client.Requests (
 
+    configR,
     getSecretR,
     putSecretR,
     updateSecretMetadataR,
@@ -25,6 +26,22 @@ import           Network.HTTP.Simple                 ( setRequestBody
 
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
+
+configR
+  :: String                     -- ^ Endpoint
+  ->VaultConnection
+  -> Int                        -- ^ Max versions
+  -> Bool                       -- ^ CAS required
+  -> IO (Either String A.Value)
+configR ep VaultConnection{..} mvs casr =
+  parseRequest ep
+  >>= runRequest manager
+    . setRequestHeaders (vaultHeaders vaultToken)
+    . setRequestBodyJSON
+        SecretSettings
+          {  max_versions = mvs
+          , cas_required  = casr
+          }
 
 getSecretR
   :: VaultConnection

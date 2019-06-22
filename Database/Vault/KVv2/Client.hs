@@ -6,6 +6,7 @@ module Database.Vault.KVv2.Client (
     -- * Connect and configure Vault KV v2 Engine
     vaultConnect,
     kvEngineConfig,
+    secretConfig,
   
     -- * Basic operations
 
@@ -18,14 +19,13 @@ module Database.Vault.KVv2.Client (
     unDeleteSecretVersions,
   
     -- * Permanent secret deletion
-    destroySecretVersions,
     destroySecret,
+    destroySecretVersions,
   
-    -- * Get information
+    -- * Get informations
 
---    secretCurrentVersion
+    secretCurrentVersion,
     readSecretMetadata,
---    updateSecretMetadata,
     secretsList,
 
     -- * Utils
@@ -41,15 +41,10 @@ import           Data.HashMap.Strict
 import qualified Data.Maybe                          as M
 import           Data.Text                           hiding (concat)
 import           Network.Connection 
-import           Network.HTTP.Client
-import           Network.HTTP.Simple                 ( setRequestHeaders
-                                                     , setRequestBodyJSON
-                                                     )
 import           Network.HTTP.Client.TLS
 import           System.Environment                  (lookupEnv)
 import           System.Posix.Files                  (fileExist)
 
-import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
 import           Database.Vault.KVv2.Client.Lens
 import           Database.Vault.KVv2.Client.Requests
@@ -103,15 +98,18 @@ kvEngineConfig
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
-kvEngineConfig VaultConnection{..} mvs casr =
-  parseRequest (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "config"])
-  >>= runRequest manager
-    . setRequestHeaders (vaultHeaders vaultToken)
-    . setRequestBodyJSON
-        SecretSettings
-          {  max_versions = mvs
-          , cas_required = casr
-          }
+kvEngineConfig vc@VaultConnection{..} =
+  configR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "config"]) vc
+
+
+secretConfig
+  :: VaultConnection
+  -> SecretPath
+  -> Int                        -- ^ Max versions
+  -> Bool                       -- ^ CAS required
+  -> IO (Either String A.Value)
+secretConfig vc@VaultConnection{..} (SecretPath sp) =
+  configR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]) vc
 
 -- | Get a secret from Vault.
 getSecret
@@ -131,7 +129,6 @@ putSecret
   -> IO (Either String SecretVersion)
 putSecret vc cas sp sd =
   version <$> putSecretR vc cas sp sd
-
 
 deleteSecret
   :: VaultConnection
@@ -171,8 +168,6 @@ destroySecretVersions
 destroySecretVersions vc sp vs =
   destroySecretVersionsR vc sp vs
 
--- secretCurrentVersion -- TODO
-
 secretsList
   :: VaultConnection
   -> SecretPath
@@ -187,21 +182,13 @@ readSecretMetadata
 readSecretMetadata vc sp =
   metadata <$> readSecretMetadataR vc sp
 
-currentVersion
+secretCurrentVersion
   :: VaultConnection
   -> SecretPath
-  -> IO (Either String SecretMetadata)
-currentVersion vc sp =
+  -> IO (Either String SecretVersion)
+secretCurrentVersion vc sp =
   current <$> readSecretMetadataR vc sp
-{-
-updateSecretMetadata --
-  :: VaultConnection
-  -> SecretPath
-  -> Int                        -- ^ Max versions
-  -> Bool                       -- ^ CAS required
-  -> IO (Either String A.Value) -- TODO
-updateSecretMetadata VaultConnection{..} (SecretPath sp) mvs casr = undefined
--}
+
 -- Utils
 
 toSecretData
