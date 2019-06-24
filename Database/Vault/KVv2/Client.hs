@@ -141,17 +141,17 @@ deleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value) -- TODO
-deleteSecretVersions vc sp vs =
-  deleteSecretVersionsR vc sp vs
+  -> IO (Either String A.Value)
+deleteSecretVersions vc@VaultConnection{..} (SecretPath sp) =
+  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp]) vc
 
 unDeleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value) -- TODO
-unDeleteSecretVersions vc sp vs =
-  unDeleteSecretVersionsR vc sp vs
+  -> IO (Either String A.Value)
+unDeleteSecretVersions vc@VaultConnection{..} (SecretPath sp) =
+  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp]) vc
 
 destroySecret
   :: VaultConnection
@@ -164,9 +164,9 @@ destroySecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value) -- TODO
-destroySecretVersions vc sp vs =
-  destroySecretVersionsR vc sp vs
+  -> IO (Either String A.Value)
+destroySecretVersions vc@VaultConnection{..} (SecretPath sp) =
+  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "destroy/", sp]) vc
 
 secretsList
   :: VaultConnection
