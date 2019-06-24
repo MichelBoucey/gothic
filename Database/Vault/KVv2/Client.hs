@@ -194,7 +194,7 @@ secretCurrentVersion vc sp =
 toSecretData
   :: [(Text,Text)]
   -> SecretData
-toSecretData ps = SecretData (fromList ps)
+toSecretData = SecretData . fromList
 
 toSecretVersions
   :: [Int]
