@@ -99,7 +99,7 @@ secretsListR
   -> SecretPath
   -> IO (Either String A.Value)
 secretsListR VaultConnection{..} (SecretPath sp) =
-  if last sp /= '/'
+  if last sp /= '/' -- TODO -> *** Exception: Prelude.last: empty list
     then return (Left "SecretPath must be a folder/")
     else parseRequest (concat ["LIST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp])
          >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
