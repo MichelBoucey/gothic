@@ -133,7 +133,7 @@ putSecret vc cas sp sd =
 deleteSecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Maybe String)
+  -> IO (Maybe Error)
 deleteSecret vc sp =
   maybeError <$> deleteSecretR vc sp
 
