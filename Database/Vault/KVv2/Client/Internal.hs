@@ -4,7 +4,8 @@ module Database.Vault.KVv2.Client.Internal (
 
     runRequest,
     vaultHeaders,
-    toJSONName
+    toJSONName,
+    toInt
 
   ) where
 
@@ -12,6 +13,7 @@ import           Control.Monad.Catch
 import qualified Data.ByteString           as B
 import qualified Data.Aeson                as A
 import qualified Data.Maybe                as M
+import           Data.Scientific
 import           Network.HTTP.Client
 import           Network.HTTP.Types.Header
 
@@ -42,3 +44,5 @@ toJSONName "secret_metadata" = "metadata"
 toJSONName "response_data"   = "data"
 toJSONName s                 = s
 
+toInt :: Scientific -> Int
+toInt = M.fromJust . toBoundedInteger

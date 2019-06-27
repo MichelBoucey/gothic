@@ -13,10 +13,10 @@ module Database.Vault.KVv2.Client.Lens (
 import           Control.Lens
 import qualified Data.Aeson                       as A
 import           Data.Aeson.Lens
-import           Data.Scientific
 import           Data.Text                        as T
 import qualified Data.Vector                      as V
 
+import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
 
 secret
@@ -37,7 +37,7 @@ version
 version (Left s) = fail s
 version (Right v) =
   case v ^? key "data" . key "version" of
-    Just (A.Number n) -> return (SecretVersion $ base10Exponent n)
+    Just (A.Number n) -> return (SecretVersion $ toInt n)
     Just _            -> fail "No secret version JSON field"
     Nothing           -> fail "No secret version JSON field"
 
@@ -47,7 +47,7 @@ current
 current (Left s) = fail s
 current (Right v) =
   case v ^? key "data" . key "current_version" of
-    Just (A.Number n) -> return (SecretVersion $ base10Exponent n)
+    Just (A.Number n) -> return (SecretVersion $ toInt n)
     Just _            -> fail "No current secret version JSON field"
     Nothing           -> fail "No current secret version JSON field"
 
