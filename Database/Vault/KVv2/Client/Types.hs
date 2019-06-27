@@ -17,6 +17,8 @@ import           Network.HTTP.Client  (Manager)
 
 type VaultToken = String
 
+type Error = String
+
 data VaultConnection =
   VaultConnection
     { vaultAddr         :: String

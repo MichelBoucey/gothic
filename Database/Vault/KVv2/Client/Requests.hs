@@ -36,8 +36,8 @@ configR ep VaultConnection{..} mvs casr =
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBodyJSON
         SecretSettings
-          {  max_versions = mvs
-          , cas_required  = casr
+          { max_versions = mvs
+          , cas_required = casr
           }
 
 getSecretR
@@ -63,7 +63,7 @@ putSecretR VaultConnection{..} cas (SecretPath sp) sd =
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBodyJSON
         PutSecretRequestBody
-          { options = PutSecretOptions { cas = cas }
+          { options  = PutSecretOptions { cas = cas }
           , put_data = sd
           }
 

@@ -86,10 +86,10 @@ vaultConnect mva sep mvt dcv = do
   pure $
     (\vt ->
       VaultConnection
-        { vaultAddr = M.fromJust va
-        , vaultToken = vt
+        { vaultAddr         = M.fromJust va
+        , vaultToken        = vt
         , secretsEnginePath = sep
-        , manager = nm
+        , manager           = nm
         }
     ) <$> evt
 
@@ -133,32 +133,32 @@ putSecret vc cas sp sd =
 deleteSecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Either String A.Value) -- TODO
+  -> IO (Maybe String)
 deleteSecret vc sp =
-  deleteSecretR vc sp
+  maybeError <$> deleteSecretR vc sp
 
 deleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value)
-deleteSecretVersions vc@VaultConnection{..} (SecretPath sp) =
-  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp]) vc
+  -> IO (Maybe Error)
+deleteSecretVersions vc@VaultConnection{..} (SecretPath sp) svs =
+  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp]) vc svs
 
 unDeleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Either String A.Value)
-unDeleteSecretVersions vc@VaultConnection{..} (SecretPath sp) =
-  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp]) vc
+  -> IO (Maybe Error)
+unDeleteSecretVersions vc@VaultConnection{..} (SecretPath sp) svs =
+  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp]) vc svs
 
 destroySecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Either String A.Value) -- TODO
+  -> IO (Maybe Error)
 destroySecret vc sp =
-  destroySecretR vc sp
+  maybeError <$> destroySecretR vc sp
 
 destroySecretVersions
   :: VaultConnection

@@ -2,11 +2,12 @@
 
 module Database.Vault.KVv2.Client.Lens (
 
-    secret,
-    version,
+    current,
     list,
     metadata,
-    current
+    maybeError,
+    secret,
+    version
 
   ) where
 
@@ -27,8 +28,8 @@ secret (Right v) =
   case v ^? key "data" . key "data" of
     Just o  ->
       case A.fromJSON o of
-        A.Success sd -> Right sd -- TODO -> case Value == Null -> fail
-        A.Error e    -> Left e
+        A.Success sd -> Right sd
+        A.Error e    -> Left e   -- TODO -> Left "expected HashMap ~Text v, encountered Null"
     Nothing -> Left "No secret data JSON object"
 
 version
@@ -40,6 +41,16 @@ version (Right v) =
     Just (A.Number n) -> return (SecretVersion $ toInt n)
     Just _            -> fail "No secret version JSON field"
     Nothing           -> fail "No secret version JSON field"
+
+maybeError
+  :: Either String A.Value
+  -> Maybe Error
+maybeError (Left s) = return s
+maybeError (Right v) =
+  case v ^? key "data" . key "version" of
+    Just A.Null -> Nothing
+    Just _      -> return "No secret version JSON field"
+    Nothing     -> return "No secret version JSON field"
 
 current
   :: Either String A.Value
