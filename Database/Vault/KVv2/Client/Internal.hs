@@ -5,7 +5,8 @@ module Database.Vault.KVv2.Client.Internal (
     runRequest,
     vaultHeaders,
     toJSONName,
-    toInt
+    toInt,
+    hasTrailingSlash
 
   ) where
 
@@ -46,3 +47,7 @@ toJSONName s                 = s
 
 toInt :: Scientific -> Int
 toInt = M.fromJust . toBoundedInteger
+
+hasTrailingSlash :: String -> Bool
+hasTrailingSlash s = s /= mempty && last s == '/'
+

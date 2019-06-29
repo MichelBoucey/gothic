@@ -23,67 +23,71 @@ import           Database.Vault.KVv2.Client.Types
 secret
   :: Either String A.Value
   -> Either String SecretData
-secret (Left s) = fail s
+secret (Left s) = Left s
 secret (Right v) =
   case v ^? key "data" . key "data" of
     Just o  ->
-      case A.fromJSON o of
-        A.Success sd -> Right sd
-        A.Error e    -> Left e   -- TODO -> Left "expected HashMap ~Text v, encountered Null"
-    Nothing -> Left "No secret data JSON object"
+      case o of
+        A.Null -> Left "No current secret version"
+        A.Object _ ->
+          case A.fromJSON o of
+            A.Success sd -> Right sd
+            A.Error e    -> Left e
+        _          -> Left "Unexpected JSON type"
+    Nothing -> Left "No secret data"
 
 version
   :: Either String A.Value
   -> Either String SecretVersion
-version (Left s) = fail s
+version (Left s) = Left s
 version (Right v) =
   case v ^? key "data" . key "version" of
-    Just (A.Number n) -> return (SecretVersion $ toInt n)
-    Just _            -> fail "No secret version JSON field"
-    Nothing           -> fail "No secret version JSON field"
+    Just (A.Number n) -> Right (SecretVersion $ toInt n)
+    Just _            -> Left "Unexpected JSON type"
+    Nothing           -> Left "No secret version"
 
 maybeError
   :: Either String A.Value
   -> Maybe Error
-maybeError (Left s) = return s
+maybeError (Left s) = Just s
 maybeError (Right v) =
   case v ^? key "data" . key "version" of
     Just A.Null -> Nothing
-    Just _      -> return "No secret version JSON field"
-    Nothing     -> return "No secret version JSON field"
+    Just _      -> Just "Unexpected JSON type"
+    Nothing     -> Just "No secret version JSON field"
 
 current
   :: Either String A.Value
   -> Either String SecretVersion
-current (Left s) = fail s
+current (Left s) = Left s
 current (Right v) =
   case v ^? key "data" . key "current_version" of
-    Just (A.Number n) -> return (SecretVersion $ toInt n)
-    Just _            -> fail "No current secret version JSON field"
-    Nothing           -> fail "No current secret version JSON field"
+    Just (A.Number n) -> Right (SecretVersion $ toInt n)
+    Just _            -> Left "Unexpected JSON type"
+    Nothing           -> Left "No current secret version JSON field"
 
 metadata
   :: Either String A.Value
   -> Either String SecretMetadata
-metadata (Left s) = fail s
+metadata (Left s) = Left s
 metadata (Right v) =
   case v ^? key "data" . key "versions" of
     Just o@(A.Object _) ->
       case A.fromJSON o of
-        A.Success vs  -> return vs
+        A.Success vs -> Right vs
         A.Error e    -> Left e
-    Just _            -> fail "No secret version JSON field"
-    Nothing           -> fail "No secret version JSON field"
+    Just _           -> Left "Unexpected JSON type"
+    Nothing             -> Left "No secret versions JSON field"
 
 list
   :: Either String A.Value
   -> Either String [VaultKey]
-list (Left s) = fail s
+list (Left s) = Left s
 list (Right v) =
   case v ^? key "data" . key "keys" of
-    Just (A.Array a)  -> return (listKeys a)
-    Just _            -> Left "No secret data JSON object"
-    Nothing           -> Left "No secret data JSON object"
+    Just (A.Array a)  -> Right (listKeys a)
+    Just _            -> Left "Unexpected JSON type"
+    Nothing           -> Left "No secret keys JSON field"
   where
   listKeys =
     V.foldl lks mempty

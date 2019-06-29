@@ -46,7 +46,7 @@ data SecretMetadata =
 
 instance FromJSON SecretMetadata where
   parseJSON (Object o) =
-    return (SecretMetadata $ fromList $ trans <$> toList o)
+    pure (SecretMetadata . fromList $ trans <$> toList o)
     where
     trans p =
       case p of
@@ -92,9 +92,10 @@ newtype PutSecretOptions =
     deriving (Show)
 
 instance ToJSON PutSecretOptions where
-  toJSON PutSecretOptions { cas = WriteAllowed }     = object []
-  toJSON PutSecretOptions { cas = CreateOnly }       = object [ "cas" .= Number 0.0 ]
-  toJSON PutSecretOptions { cas = CurrentVersion v } = object [ "cas" .= Number (read (show v) :: Scientific) ]
+  toJSON PutSecretOptions { cas = WriteAllowed } = object []
+  toJSON PutSecretOptions { cas = CreateOnly }   = object [ "cas" .= Number 0.0 ]
+  toJSON PutSecretOptions { cas = CurrentVersion v } =
+    object [ "cas" .= Number (read (show v) :: Scientific) ]
 
 data PutSecretRequestBody =
   PutSecretRequestBody
