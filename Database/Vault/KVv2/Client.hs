@@ -88,7 +88,7 @@ vaultConnect mva sep mvt dcv = do
       VaultConnection
         { vaultAddr         = M.fromJust va
         , vaultToken        = vt
-        , secretsEnginePath = sep
+        , kvEnginePath = sep
         , manager           = nm
         }
     ) <$> evt
@@ -99,7 +99,7 @@ kvEngineConfig
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
 kvEngineConfig vc@VaultConnection{..} =
-  configR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "config"]) vc
+  configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "config"]) vc
 
 
 secretConfig
@@ -108,8 +108,8 @@ secretConfig
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
-secretConfig vc@VaultConnection{..} (SecretPath sp) =
-  configR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "metadata/", sp ]) vc
+secretConfig vc@VaultConnection{..} SecretPath{..} =
+  configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "metadata/", path ]) vc
 
 -- | Get a secret from Vault.
 getSecret
@@ -142,16 +142,16 @@ deleteSecretVersions
   -> SecretPath
   -> SecretVersions
   -> IO (Maybe Error)
-deleteSecretVersions vc@VaultConnection{..} (SecretPath sp) svs =
-  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "delete/", sp]) vc svs
+deleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
+  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "delete/", path]) vc svs
 
 unDeleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
   -> IO (Maybe Error)
-unDeleteSecretVersions vc@VaultConnection{..} (SecretPath sp) svs =
-  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "undelete/", sp]) vc svs
+unDeleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
+  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "undelete/", path]) vc svs
 
 destroySecret
   :: VaultConnection
@@ -165,8 +165,8 @@ destroySecretVersions
   -> SecretPath
   -> SecretVersions
   -> IO (Either String A.Value)
-destroySecretVersions vc@VaultConnection{..} (SecretPath sp) =
-  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", secretsEnginePath, "destroy/", sp]) vc
+destroySecretVersions vc@VaultConnection{..} SecretPath{..} =
+  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "destroy/", path]) vc
 
 secretsList
   :: VaultConnection

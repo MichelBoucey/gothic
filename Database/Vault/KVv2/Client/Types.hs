@@ -4,7 +4,7 @@
 
 module Database.Vault.KVv2.Client.Types where
 
-import           Control.Monad
+import           Control.Monad        (mzero)
 import           Data.Aeson
 import qualified Data.ByteString      as B
 import           Data.HashMap.Strict
@@ -21,10 +21,10 @@ type Error = String
 
 data VaultConnection =
   VaultConnection
-    { vaultAddr         :: String
-    , secretsEnginePath :: String
-    , vaultToken        :: B.ByteString
-    , manager           :: Manager
+    { vaultAddr    :: String
+    , kvEnginePath :: String
+    , vaultToken   :: B.ByteString
+    , manager      :: Manager
     }
 
 data SecretVersions =
@@ -111,7 +111,7 @@ instance ToJSON PutSecretRequestBody where
       ]
 
 data VaultKey
-  = VaultKey T.Text
-  | VaultFolder T.Text
+  = VaultKey String
+  | VaultFolder String
   deriving (Show) 
 
