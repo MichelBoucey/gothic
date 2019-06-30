@@ -6,6 +6,7 @@ module Database.Vault.KVv2.Client.Types where
 
 import           Control.Monad        (mzero)
 import           Data.Aeson
+-- import           Data.Binary -- TODO
 import qualified Data.ByteString      as B
 import           Data.HashMap.Strict
 import           Data.Hashable
@@ -59,15 +60,17 @@ instance FromJSON SecretMetadata where
 
 data Metadata =
   Metadata 
-    { destroyed     :: Bool
-    , deletion_time :: T.Text
-    , created_time  :: T.Text
+    { destroyed     :: !Bool
+    , deletion_time :: !T.Text
+    , created_time  :: !T.Text
     } deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 newtype SecretData =
   SecretData
     (HashMap T.Text T.Text)
     deriving (Show, Generic, ToJSON, FromJSON)
+
+-- instance Binary SecretData -- TODO
 
 data SecretSettings =
   SecretSettings

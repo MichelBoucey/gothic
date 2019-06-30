@@ -54,7 +54,7 @@ import           Database.Vault.KVv2.Client.Types
 import           Database.Vault.KVv2.Client.Lens
 import           Database.Vault.KVv2.Client.Requests
 
--- | Get a 'VaultConnection' or an error message.
+-- | Get a 'VaultConnection', or an error message.
 vaultConnect
   :: Maybe String                       -- ^ Use 'Just' this string as Vault address or get it from variable environment VAULT_ADDR
   -> String                             -- ^ KV engine path
@@ -117,7 +117,8 @@ secretConfig
 secretConfig vc@VaultConnection{..} SecretPath{..} =
   configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/metadata/", path ]) vc
 
--- | Get a secret from Vault.
+-- | Get a secret from Vault. Give 'Just' the 'SecretVersion'
+-- to retrieve or 'Nothing' to get the current one.
 --
 -- >λ>getSecret conn (SecretPath "MySecret") Nothing
 -- >Right (SecretData (fromList [("Top","secret!")]))
@@ -130,12 +131,12 @@ getSecret
 getSecret vc sp msv =
   secret <$> getSecretR vc sp msv
 
--- | Put a secret in Vault.
+-- | Put 'SecretData' into Vault at the given location.
 putSecret
   :: VaultConnection
   -> CheckAndSet                      -- ^ 'WriteAllowed', 'CreateOnly' or 'CurrentVersion'
   -> SecretPath
-  -> SecretData
+  -> SecretData                       -- ^ Data to put at 'SecretPath' location
   -> IO (Either String SecretVersion)
 putSecret vc cas sp sd =
   version <$> putSecretR vc cas sp sd
@@ -163,6 +164,7 @@ unDeleteSecretVersions
 unDeleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
   maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/undelete/", path]) vc svs
 
+-- | Permanently delete a secret, i.e. all its versions and metadata.
 destroySecret
   :: VaultConnection
   -> SecretPath
@@ -178,6 +180,7 @@ destroySecretVersions
 destroySecretVersions vc@VaultConnection{..} SecretPath{..} =
   secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/destroy/", path]) vc
 
+-- | Get list of secrets and folders at the given location.
 secretsList
   :: VaultConnection
   -> SecretPath
@@ -185,6 +188,11 @@ secretsList
 secretsList vc sp =
   list <$> secretsListR vc sp
 
+-- | Retrieve versions history of the given secret.
+--
+-- >λ: readSecretMetadata conn (SecretPath "MySecret") 
+-- >Right (SecretMetadata (fromList [(SecretVersion 1,Metadata {destroyed = True, deletion_time = "", created_time = "2019-05-30T13:22:58.416399224Z"}),(SecretVersion 2,Metadata {destroyed = True, deletion_time = "2019-06-29T15:28:46.145302138Z"})]))
+--
 readSecretMetadata
   :: VaultConnection
   -> SecretPath
@@ -192,6 +200,7 @@ readSecretMetadata
 readSecretMetadata vc sp =
   metadata <$> readSecretMetadataR vc sp
 
+-- | Get version number of the current given secret.
 secretCurrentVersion
   :: VaultConnection
   -> SecretPath
@@ -206,11 +215,14 @@ toSecretData
   -> SecretData
 toSecretData = SecretData . fromList
 
-fromSecretData :: SecretData -> [(Text,Text)]
+fromSecretData
+  :: SecretData
+  -> [(Text,Text)]
 fromSecretData = undefined -- TODO
 
 toSecretVersions
   :: [Int]
   -> SecretVersions
-toSecretVersions is = SecretVersions (SecretVersion <$> is)
+toSecretVersions is =
+  SecretVersions (SecretVersion <$> is)
 
