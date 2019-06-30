@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
+-----------------------------------------------------------------------------------------------
+-- | For HashiCorp Vault KVv2 API details: https://www.vaultproject.io/api/secret/kv/kv-v2.html
+-----------------------------------------------------------------------------------------------
+
 module Database.Vault.KVv2.Client (
 
     -- * Connect and configure Vault KV v2 Engine
@@ -10,8 +14,8 @@ module Database.Vault.KVv2.Client (
   
     -- * Basic operations
 
-    getSecret,
     putSecret,
+    getSecret,
   
     -- * Soft secret deletion
     deleteSecret,
@@ -30,6 +34,7 @@ module Database.Vault.KVv2.Client (
 
     -- * Utils
     toSecretData,
+    fromSecretData,
     toSecretVersions,
 
   ) where
@@ -51,9 +56,9 @@ import           Database.Vault.KVv2.Client.Requests
 
 -- | Get a 'VaultConnection' or an error message.
 vaultConnect
-  :: Maybe String                       -- ^ Use Just this string as Vault address or get it from VAULT_ADDR
-  -> String                             -- ^ Secrets engine path
-  -> Maybe VaultToken                   -- ^ Use Just this Vault token or get it from $HOME/.vaut-token
+  :: Maybe String                       -- ^ Use 'Just' this string as Vault address or get it from variable environment VAULT_ADDR
+  -> String                             -- ^ KV engine path
+  -> Maybe VaultToken                   -- ^ Use 'Just' this Vault token or get it from $HOME/.vaut-token
   -> Bool                               -- ^ Disable certificate validation
   -> IO (Either String VaultConnection)
 vaultConnect mva sep mvt dcv = do
@@ -86,22 +91,23 @@ vaultConnect mva sep mvt dcv = do
   pure $
     (\vt ->
       VaultConnection
-        { vaultAddr         = M.fromJust va
-        , vaultToken        = vt
+        { vaultAddr    = M.fromJust va
+        , vaultToken   = vt
         , kvEnginePath = sep
-        , manager           = nm
+        , manager      = nm
         }
     ) <$> evt
 
+-- | Set default secret settings for the KVv2 engine.
 kvEngineConfig
   :: VaultConnection
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
 kvEngineConfig vc@VaultConnection{..} =
-  configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "config"]) vc
+  configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/config"]) vc
 
-
+-- | Override default secret settings for the given secret.
 secretConfig
   :: VaultConnection
   -> SecretPath
@@ -109,9 +115,13 @@ secretConfig
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
 secretConfig vc@VaultConnection{..} SecretPath{..} =
-  configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "metadata/", path ]) vc
+  configR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/metadata/", path ]) vc
 
 -- | Get a secret from Vault.
+--
+-- >λ>getSecret conn (SecretPath "MySecret") Nothing
+-- >Right (SecretData (fromList [("Top","secret!")]))
+--
 getSecret
   :: VaultConnection
   -> SecretPath
@@ -123,7 +133,7 @@ getSecret vc sp msv =
 -- | Put a secret in Vault.
 putSecret
   :: VaultConnection
-  -> CheckAndSet
+  -> CheckAndSet                      -- ^ 'WriteAllowed', 'CreateOnly' or 'CurrentVersion'
   -> SecretPath
   -> SecretData
   -> IO (Either String SecretVersion)
@@ -143,7 +153,7 @@ deleteSecretVersions
   -> SecretVersions
   -> IO (Maybe Error)
 deleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
-  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "delete/", path]) vc svs
+  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/delete/", path]) vc svs
 
 unDeleteSecretVersions
   :: VaultConnection
@@ -151,7 +161,7 @@ unDeleteSecretVersions
   -> SecretVersions
   -> IO (Maybe Error)
 unDeleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
-  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "undelete/", path]) vc svs
+  maybeError <$> secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/undelete/", path]) vc svs
 
 destroySecret
   :: VaultConnection
@@ -166,7 +176,7 @@ destroySecretVersions
   -> SecretVersions
   -> IO (Either String A.Value)
 destroySecretVersions vc@VaultConnection{..} SecretPath{..} =
-  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "destroy/", path]) vc
+  secretVersionsR (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/destroy/", path]) vc
 
 secretsList
   :: VaultConnection
@@ -195,6 +205,9 @@ toSecretData
   :: [(Text,Text)]
   -> SecretData
 toSecretData = SecretData . fromList
+
+fromSecretData :: SecretData -> [(Text,Text)]
+fromSecretData = undefined -- TODO
 
 toSecretVersions
   :: [Int]

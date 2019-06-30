@@ -21,10 +21,10 @@ type Error = String
 
 data VaultConnection =
   VaultConnection
-    { vaultAddr    :: String
-    , kvEnginePath :: String
-    , vaultToken   :: B.ByteString
-    , manager      :: Manager
+    { vaultAddr    :: !String
+    , kvEnginePath :: !String
+    , vaultToken   :: !B.ByteString
+    , manager      :: !Manager
     }
 
 data SecretVersions =
@@ -83,7 +83,7 @@ newtype SecretPath =
 data CheckAndSet
   = WriteAllowed
   | CreateOnly
-  | CurrentVersion Int
+  | CurrentVersion !Int
   deriving (Show, Generic, ToJSON)
 
 newtype PutSecretOptions =
@@ -111,7 +111,7 @@ instance ToJSON PutSecretRequestBody where
       ]
 
 data VaultKey
-  = VaultKey String
-  | VaultFolder String
+  = VaultKey !String
+  | VaultFolder !String
   deriving (Show) 
 
