@@ -58,7 +58,7 @@ import           Database.Vault.KVv2.Client.Requests
 vaultConnect
   :: Maybe String                       -- ^ Use 'Just' this string as Vault address or get it from variable environment VAULT_ADDR
   -> String                             -- ^ KV engine path
-  -> Maybe VaultToken                   -- ^ Use 'Just' this Vault token or get it from $HOME/.vaut-token
+  -> Maybe VaultToken                   -- ^ Use 'Just' this 'VaultToken' or get it from $HOME/.vaut-token
   -> Bool                               -- ^ Disable certificate validation
   -> IO (Either String VaultConnection)
 vaultConnect mva sep mvt dcv = do
