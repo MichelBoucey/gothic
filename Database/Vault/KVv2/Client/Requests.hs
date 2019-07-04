@@ -50,7 +50,7 @@ getSecretR VaultConnection{..} SecretPath{..} msv =
     (concat [vaultAddr, "/v1/", kvEnginePath, "/data/", path, queryString msv])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
   where
-  queryString = maybe "" (\v -> "?version=" ++ show v) 
+  queryString = maybe "" (\(SecretVersion v) -> "?version=" ++ show v) 
   
 putSecretR
   :: VaultConnection

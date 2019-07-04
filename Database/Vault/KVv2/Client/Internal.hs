@@ -28,8 +28,8 @@ runRequest m r =
   esv t =
     case t of
       Right b ->
-        return (M.fromMaybe A.Null $ A.decode $ responseBody b)
-      Left  e -> fail $ show (e::SomeException)
+        pure (M.fromMaybe A.Null $ A.decode $ responseBody b)
+      Left  e -> Left $ show (e::SomeException)
 
 vaultHeaders
   :: B.ByteString -- ^ Vault token
