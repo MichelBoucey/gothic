@@ -7,7 +7,7 @@
 
 module Database.Vault.KVv2.Client (
 
-    -- * Connect and configure Vault KV v2 Engine
+    -- * Connect & configure Vault KVv2 Engine
     vaultConnect,
     kvEngineConfig,
     secretConfig,
@@ -86,8 +86,8 @@ vaultConnect mva sep mvt dcv = do
                      if fe 
                        then Right <$> B.readFile pf
                        else return (Left $ "No Vault token file found at " ++ pf)
-                   else return (Left "Variable environnment VAULT_ADDR not set")
-               else return (Left "Variable environnment VAULT_ADDR not set")
+                   else return (Left "Variable environment VAULT_ADDR not set")
+               else return (Left "Variable environment HOME not set")
   pure $
     (\vt ->
       VaultConnection
@@ -218,7 +218,7 @@ toSecretData = SecretData . fromList
 fromSecretData
   :: SecretData
   -> [(Text,Text)]
-fromSecretData = undefined -- TODO
+fromSecretData (SecretData sd) = toList sd
 
 toSecretVersions
   :: [Int]
