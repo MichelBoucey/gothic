@@ -1,14 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Database.Vault.KVv2.Client.Internal (
-
-    runRequest,
-    vaultHeaders,
-    toJSONName,
-    toInt,
-    hasTrailingSlash
-
-  ) where
+module Database.Vault.KVv2.Client.Internal where
 
 import           Control.Monad.Catch
 import qualified Data.ByteString           as B
@@ -51,3 +43,17 @@ toInt = M.fromJust . toBoundedInteger
 hasTrailingSlash :: String -> Bool
 hasTrailingSlash s = s /= mempty && last s == '/'
 
+removeTrailingSlash :: String -> String
+removeTrailingSlash s =
+  if hasTrailingSlash s
+    then init s
+    else s
+
+hasLeadingSlash :: String -> Bool
+hasLeadingSlash s = s /= mempty && head s == '/'
+
+removeLeadingSlash :: String -> String
+removeLeadingSlash s =
+  if hasLeadingSlash s
+    then tail s
+    else s

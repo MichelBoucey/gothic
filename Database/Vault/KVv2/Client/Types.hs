@@ -16,6 +16,8 @@ import           Data.Text.Read       (decimal)
 import           GHC.Generics
 import           Network.HTTP.Client  (Manager)
 
+import           Database.Vault.KVv2.Client.Internal
+
 type VaultToken = String
 
 type Error = String
@@ -29,7 +31,9 @@ data VaultConnection =
     }
 
 instance Show VaultConnection where
-  show (VaultConnection va ep _ _) = va <> "/v1/" <> ep
+  show (VaultConnection a p _ _) =
+    removeTrailingSlash a <> "/v1/"
+    <> removeTrailingSlash (removeLeadingSlash p)
 
 data SecretVersions =
   SecretVersions [SecretVersion]
@@ -117,7 +121,7 @@ instance ToJSON PutSecretRequestBody where
       ]
 
 data VaultKey
-  = VaultKey !String
+  = VaultKey    !String
   | VaultFolder !String
   deriving (Show) 
 
