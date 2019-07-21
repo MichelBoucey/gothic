@@ -28,7 +28,7 @@ module Database.Vault.KVv2.Client (
   
     -- * Get informations
 
-    secretCurrentVersion,
+    currentSecretVersion,
     readSecretMetadata,
     secretsList,
 
@@ -201,11 +201,11 @@ readSecretMetadata vc sp =
   metadata <$> readSecretMetadataR vc sp
 
 -- | Get version number of the current given secret.
-secretCurrentVersion
+currentSecretVersion
   :: VaultConnection
   -> SecretPath
   -> IO (Either String SecretVersion)
-secretCurrentVersion vc sp =
+currentSecretVersion vc sp =
   current <$> readSecretMetadataR vc sp
 
 -- Utils
