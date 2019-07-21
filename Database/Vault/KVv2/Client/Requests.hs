@@ -45,9 +45,9 @@ getSecretR
   -> SecretPath
   -> Maybe SecretVersion
   -> IO (Either String A.Value)
-getSecretR VaultConnection{..} SecretPath{..} msv =
+getSecretR vc@VaultConnection{..} SecretPath{..} msv =
   parseRequest
-    (concat [vaultAddr, "/v1/", kvEnginePath, "/data/", path, queryString msv])
+    (concat [show vc, "/data/", path, queryString msv])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
   where
   queryString = maybe "" (\(SecretVersion v) -> "?version=" ++ show v) 
@@ -58,9 +58,9 @@ putSecretR
   -> SecretPath
   -> SecretData
   -> IO (Either String A.Value)
-putSecretR VaultConnection{..} cas SecretPath{..} sd =
+putSecretR vc@VaultConnection{..} cas SecretPath{..} sd =
   parseRequest
-    (concat ["POST ", vaultAddr, "/v1/", kvEnginePath, "/data/", path ])
+    (concat ["POST ", show vc, "/data/", path])
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBodyJSON
@@ -73,9 +73,9 @@ deleteSecretR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-deleteSecretR VaultConnection{..} SecretPath{..} =
+deleteSecretR vc@VaultConnection{..} SecretPath{..} =
   parseRequest
-    (concat ["DELETE ", vaultAddr, "/v1/", kvEnginePath, "/data/", path])
+    (concat ["DELETE ", show vc, "/data/", path])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 secretVersionsR
@@ -93,20 +93,20 @@ destroySecretR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-destroySecretR VaultConnection{..} SecretPath{..} =
+destroySecretR vc@VaultConnection{..} SecretPath{..} =
   parseRequest
-    (concat ["DELETE ", vaultAddr, "/v1/", kvEnginePath, "/metadata/", path])
+    (concat ["DELETE ", show vc, "/metadata/", path])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 secretsListR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-secretsListR VaultConnection{..} SecretPath{..} =
+secretsListR vc@VaultConnection{..} SecretPath{..} =
   if hasTrailingSlash path
     then
       parseRequest
-        (concat ["LIST ", vaultAddr, "/v1/", kvEnginePath, "/metadata/", path])
+        (concat ["LIST ", show vc, "/metadata/", path])
       >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
     else pure (Left "SecretPath must be a folder/")
 
@@ -114,8 +114,8 @@ readSecretMetadataR
   :: VaultConnection
   -> SecretPath
   -> IO (Either String A.Value)
-readSecretMetadataR VaultConnection{..} SecretPath{..} =
+readSecretMetadataR vc@VaultConnection{..} SecretPath{..} =
   parseRequest
-    (concat ["GET ", vaultAddr, "/v1/", kvEnginePath, "/metadata/", path])
+    (concat ["GET ", show vc, "/metadata/", path])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 

@@ -28,6 +28,9 @@ data VaultConnection =
     , manager      :: !Manager
     }
 
+instance Show VaultConnection where
+  show (VaultConnection va ep _ _) = va <> "/v1/" <> ep
+
 data SecretVersions =
   SecretVersions [SecretVersion]
   deriving (Show, Eq)
