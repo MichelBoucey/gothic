@@ -32,8 +32,8 @@ data VaultConnection =
 
 instance Show VaultConnection where
   show (VaultConnection a p _ _) =
-    removeTrailingSlash a <> "/v1/"
-    <> removeTrailingSlash (removeLeadingSlash p)
+    removeTrailingSlash a ++ "/v1/"
+    ++ removeTrailingSlash (removeLeadingSlash p)
 
 data SecretVersions =
   SecretVersions [SecretVersion]
