@@ -35,7 +35,7 @@ instance Show VaultConnection where
     removeTrailingSlash a ++ "/v1/"
     ++ removeTrailingSlash (removeLeadingSlash p)
 
-data SecretVersions =
+newtype SecretVersions =
   SecretVersions [SecretVersion]
   deriving (Show, Eq)
 
@@ -44,11 +44,11 @@ instance ToJSON SecretVersions where
     object
       [ "versions" .= ((\(SecretVersion i) -> i) <$> svs) ]
 
-data SecretVersion
-  = SecretVersion !Int
+newtype SecretVersion
+  = SecretVersion Int
   deriving (Show, Eq, Generic, Hashable)
 
-data SecretMetadata =
+newtype SecretMetadata =
   SecretMetadata (HashMap SecretVersion Metadata)
   deriving (Show, Eq)
 
