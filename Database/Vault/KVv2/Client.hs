@@ -7,6 +7,8 @@
 
 module Database.Vault.KVv2.Client (
 
+    VaultConnection,
+
     -- * Connect & configure Vault KVv2 Engine
     vaultConnect,
     kvEngineConfig,
@@ -55,6 +57,9 @@ import           Database.Vault.KVv2.Client.Lens
 import           Database.Vault.KVv2.Client.Requests
 
 -- | Get a 'VaultConnection', or an error message.
+--
+-- >λ: vaultConnect (Just "https://vault.local.lan:8200/") "/secret" Nothing False
+--
 vaultConnect
   :: Maybe String                       -- ^ Use 'Just' this string as Vault address or get it from variable environment VAULT_ADDR
   -> String                             -- ^ KV engine path
@@ -121,7 +126,7 @@ secretConfig vc@VaultConnection{..} SecretPath{..} =
 -- to retrieve or 'Nothing' to get the current one.
 --
 -- >λ>getSecret conn (SecretPath "MySecret") Nothing
--- >Right (SecretData (fromList [("Top","secret!")]))
+-- >Right (SecretData (fromList [("my","password")]))
 --
 getSecret
   :: VaultConnection
