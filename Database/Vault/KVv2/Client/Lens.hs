@@ -15,6 +15,7 @@ import           Control.Lens
 import qualified Data.Aeson                          as A
 import           Data.Aeson.Lens
 import           Data.Text                           as T
+import           Data.List                           as L
 import qualified Data.Vector                         as V
 
 import           Database.Vault.KVv2.Client.Internal
@@ -33,7 +34,18 @@ secret (Right v) =
             A.Success sd -> Right sd
             A.Error e    -> Left e
         _          -> Left "Unexpected JSON type"
-    Nothing -> Left "No JSON field \"data\""
+    Nothing ->
+      case v ^? key "errors" of
+        Just ja ->
+          case ja of
+            A.Array a ->
+              Left (L.intercalate ", " (toString <$> V.toList a) ++ ".")
+            _         -> Left "Unexpected JSON type"
+        Nothing -> Left "Expected JSON field: errors"
+  where
+  toString (A.String s) = T.unpack s
+  toString _            = undefined
+
 secret (Left s)  = Left s
 
 version
