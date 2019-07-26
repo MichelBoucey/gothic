@@ -39,7 +39,10 @@ secret (Right v) =
         Just ja ->
           case ja of
             A.Array a ->
-              Left (L.intercalate ", " (toString <$> V.toList a) ++ ".")
+              Left $
+                L.intercalate
+                  ", "
+                   (toString <$> V.toList a) ++ "."
             _         -> Left "Unexpected JSON type"
         Nothing -> Left "Expected JSON field: errors"
   where
@@ -89,7 +92,7 @@ metadata (Right v) =
         A.Error e    -> Left e
     Just _           -> Left "Unexpected JSON type"
     Nothing          -> Left "No JSON field \"versions\""
-metadata (Left s) = Left s
+metadata (Left s)  = Left s
 
 list
   :: Either String A.Value
