@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
------------------------------------------------------------------------------------------------
--- | For HashiCorp Vault KVv2 API details: https://www.vaultproject.io/api/secret/kv/kv-v2.html
------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+-- | See https://www.vaultproject.io/api/secret/kv/kv-v2.html for HashiCorp Vault KVv2 API details
+--------------------------------------------------------------------------------------------------
 
 module Database.Vault.KVv2.Client (
 
@@ -84,13 +84,13 @@ vaultConnect mva kvep mvt dcv = do
              hm <- lookupEnv "HOME"
              if M.isJust hm
                then do
-                 let pf = M.fromJust hm ++ "/.vault-token"
+                 let fp = M.fromJust hm ++ "/.vault-token"
                  if M.isJust va
                    then do
-                     fe <- fileExist pf
+                     fe <- fileExist fp
                      if fe 
-                       then Right <$> B.readFile pf
-                       else return (Left $ "No Vault token file found at " ++ pf)
+                       then Right <$> B.readFile fp
+                       else return (Left $ "No Vault token file found at " ++ fp)
                    else return (Left "Variable environment VAULT_ADDR not set")
                else return (Left "Variable environment HOME not set")
   pure $

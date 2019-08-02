@@ -1,14 +1,14 @@
 name:                gothic
 version:             0.1.0
-synopsis:            A Haskell Vault KV v2 secret engine client
-description:         A Haskell HashiCorp Vault KV v2 secret engine client library
+synopsis:            A Haskell Vault KVv2 secret engine client
+description:         A Haskell HashiCorp Vault KVv2 secret engine client library
 homepage:            https://github.com/MichelBoucey/gothic
 license:             BSD3
 license-file:        LICENSE
 author:              Michel Boucey
 maintainer:          michel.boucey@gmail.com
 copyright:           (c) 2019 - Michel Boucey
-category:            Database, Security
+category:            DevOps, Security, Database
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  ReadMe.md
