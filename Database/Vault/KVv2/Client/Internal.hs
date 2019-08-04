@@ -28,8 +28,12 @@ runRequest m r =
         pure (M.fromMaybe A.Null $ A.decode $ responseBody b)
       Left  e -> Left $ show (e::SomeException)
 
-fromVaultResponse :: T.Text -> (A.Value -> Either String a) -> A.Value -> Either String a
-fromVaultResponse k f v = do
+fromVaultResponse
+  :: T.Text
+  -> (A.Value -> Either String a)
+  -> A.Value
+  -> Either String a
+fromVaultResponse k f v =
   case v ^? key "data" . key k of
     Just o@(A.Object _) -> f o
     Just n@(A.Number _) -> f n
