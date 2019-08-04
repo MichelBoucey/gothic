@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+-- {-# LANGUAGE ExplicitForAll    #-}
+-- {-# LANGUAGE RankNTypes #-}
 
 module Database.Vault.KVv2.Client.Lens (
 
@@ -34,17 +36,25 @@ secret e =
               A.Success sd -> pure sd
               A.Error f    -> Left f
           _          -> Left "Unexpected JSON type"
-      Nothing -> fail (jsonErrors v)
+      Nothing -> Left (jsonErrors v)
 
 version
-  :: Either String A.Value
+  :: A.Value
   -> Either String SecretVersion
-version e =
-  e >>= \v ->
-    case v ^? key "data" . key "version" of
-      Just (A.Number n) -> pure (SecretVersion $ toInt n)
-      Just _            -> unexpectedJSONType
-      Nothing           -> Left (jsonErrors v)
+version =
+  fromVaultResponse "version" toSecretVersion
+  where
+  toSecretVersion (A.Number n) = Right $ SecretVersion (toInt n)
+  toSecretVersion _            = undefined
+
+current
+  :: A.Value
+  -> Either String SecretVersion
+current =
+  fromVaultResponse "current_version" toSecretVersion
+  where
+  toSecretVersion (A.Number n) = Right $ SecretVersion (toInt n)
+  toSecretVersion _            = undefined
 
 maybeError
   :: Either String A.Value
@@ -55,29 +65,18 @@ maybeError (Right v) =
     Just A.Null -> Nothing
     Just _      -> Just "Unexpected JSON type"
     Nothing     -> Just (jsonErrors v)
-
-current
-  :: Either String A.Value
-  -> Either String SecretVersion
-current e =
-  e >>= \v ->
-    case v ^? key "data" . key "current_version" of
-      Just (A.Number n) -> pure (SecretVersion $ toInt n)
-      Just _            -> unexpectedJSONType
-      Nothing           -> Left (jsonErrors v)
-
+  
 metadata
-  :: Either String A.Value
+  :: A.Value
   -> Either String SecretMetadata
-metadata e =
-  e >>= \v ->
-    case v ^? key "data" . key "versions" of
-      Just o@(A.Object _) ->
-        case A.fromJSON o of
-          A.Success vs -> Right vs
-          A.Error f    -> Left f
-      Just _           -> unexpectedJSONType
-      Nothing          -> Left (jsonErrors v)
+metadata =
+  fromVaultResponse "versions" toSecretMetadata
+  where
+  toSecretMetadata o@(A.Object _) =
+    case A.fromJSON o of
+      A.Success vs -> Right vs
+      A.Error e    -> Left e
+  toSecretMetadata _            = undefined
 
 list
   :: Either String A.Value

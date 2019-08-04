@@ -144,7 +144,7 @@ putSecret
   -> SecretData                       -- ^ Data to put at 'SecretPath' location
   -> IO (Either String SecretVersion)
 putSecret vc cas sp sd =
-  version <$> putSecretR vc cas sp sd
+  (>>= version) <$> putSecretR vc cas sp sd
 
 deleteSecret
   :: VaultConnection
@@ -203,7 +203,7 @@ readSecretMetadata
   -> SecretPath
   -> IO (Either String SecretMetadata)
 readSecretMetadata vc sp =
-  metadata <$> readSecretMetadataR vc sp
+  (>>= metadata) <$> readSecretMetadataR vc sp
 
 -- | Get version number of the current given secret.
 currentSecretVersion
@@ -211,7 +211,7 @@ currentSecretVersion
   -> SecretPath
   -> IO (Either String SecretVersion)
 currentSecretVersion vc sp =
-  current <$> readSecretMetadataR vc sp
+  (>>= current) <$> readSecretMetadataR vc sp
 
 -- Utils
 

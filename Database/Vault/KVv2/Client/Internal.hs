@@ -2,8 +2,8 @@
 
 module Database.Vault.KVv2.Client.Internal where
 
-import           Control.Monad.Catch
 import           Control.Lens
+import           Control.Monad.Catch
 import qualified Data.ByteString           as B
 import qualified Data.Aeson                as A
 import           Data.Aeson.Lens
@@ -28,6 +28,15 @@ runRequest m r =
         pure (M.fromMaybe A.Null $ A.decode $ responseBody b)
       Left  e -> Left $ show (e::SomeException)
 
+fromVaultResponse :: T.Text -> (A.Value -> Either String a) -> A.Value -> Either String a
+fromVaultResponse k f v = do
+  case v ^? key "data" . key k of
+    Just o@(A.Object _) -> f o
+    Just n@(A.Number _) -> f n
+    Just a@(A.Array  _) -> f a
+    Just _              -> Left "Unexpected JSON type"
+    Nothing             -> Left (jsonErrors v)
+
 vaultHeaders
   :: B.ByteString -- ^ Vault token
   -> [(HeaderName, B.ByteString)]
@@ -49,7 +58,7 @@ jsonErrors v =
       case ja of
         A.Array a ->
           if a == mempty
-            then "Undetermined error."
+            then "Undetermined error"
             else
               L.intercalate
                 ", "
