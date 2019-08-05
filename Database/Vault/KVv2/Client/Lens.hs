@@ -23,20 +23,17 @@ import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
 
 secret
-  :: Either String A.Value
+  :: A.Value
   -> Either String SecretData
-secret e =
-  e >>= \v ->
-    case v ^? key "data" . key "data" of
-      Just o  ->
-        case o of
-          A.Null -> Left "No current secret version"
-          A.Object _ ->
-            case A.fromJSON o of
-              A.Success sd -> pure sd
-              A.Error f    -> Left f
-          _          -> Left "Unexpected JSON type"
-      Nothing -> Left (jsonErrors v)
+secret =
+  fromVaultResponse "data" toSecretData
+  where
+  toSecretData o@(A.Object _) =
+    case A.fromJSON o of
+      A.Success sd -> Right sd
+      A.Error e    -> Left e
+  toSecretData A.Null         = Left "No current secret version"
+  toSecretData _              = Left "Unexpected JSON type"
 
 version
   :: A.Value
@@ -44,7 +41,7 @@ version
 version =
   fromVaultResponse "version" toSecretVersion
   where
-  toSecretVersion (A.Number n) = Right $ SecretVersion (toInt n)
+  toSecretVersion (A.Number n) = Right (SecretVersion $ toInt n)
   toSecretVersion _            = undefined
 
 current
@@ -53,19 +50,9 @@ current
 current =
   fromVaultResponse "current_version" toSecretVersion
   where
-  toSecretVersion (A.Number n) = Right $ SecretVersion (toInt n)
+  toSecretVersion (A.Number n) = Right (SecretVersion $ toInt n)
   toSecretVersion _            = undefined
 
-maybeError
-  :: Either String A.Value
-  -> Maybe Error
-maybeError (Left s)  = Just s
-maybeError (Right v) =
-  case v ^? key "data" . key "version" of
-    Just A.Null -> Nothing
-    Just _      -> Just "Unexpected JSON type"
-    Nothing     -> Just (jsonErrors v)
-  
 metadata
   :: A.Value
   -> Either String SecretMetadata
@@ -79,17 +66,13 @@ metadata =
   toSecretMetadata _            = undefined
 
 list
-  :: Either String A.Value
+  :: A.Value
   -> Either String [VaultKey]
-list e =
-  e >>= \v ->
-    case v ^? key "data" . key "keys" of
-      Just (A.Array a) -> Right (listKeys a)
-      Just _           -> unexpectedJSONType
-      Nothing          -> Left (jsonErrors v)
-    where
-    listKeys =
-      V.foldl lks mempty
+list =
+  fromVaultResponse "keys" toListKeys
+  where
+    toListKeys (A.Array a) =
+      Right (V.foldl lks mempty a)
       where
         lks ks (A.String t) =
           let s = T.unpack t in
@@ -97,4 +80,15 @@ list e =
              then VaultFolder s
              else VaultKey s) : ks
         lks p       _       = p
+    toListKeys _            = undefined
  
+maybeError
+  :: Either String A.Value
+  -> Maybe Error
+maybeError (Left s)  = Just s
+maybeError (Right v) =
+  case v ^? key "data" . key "version" of
+    Just A.Null -> Nothing
+    Just _      -> Just "Unexpected JSON type"
+    Nothing     -> Just (jsonErrors v)
+  

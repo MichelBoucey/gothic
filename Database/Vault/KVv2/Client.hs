@@ -133,8 +133,10 @@ getSecret
   -> SecretPath
   -> Maybe SecretVersion
   -> IO (Either String SecretData)
-getSecret vc sp msv =
-  secret <$> getSecretR vc sp msv
+getSecret vc sp msv = do
+  -- secret <$> getSecretR vc sp msv
+  r <- getSecretR vc sp msv
+  return (r >>= secret)
 
 -- | Put 'SecretData' into Vault at the given location.
 putSecret
@@ -143,8 +145,9 @@ putSecret
   -> SecretPath
   -> SecretData                       -- ^ Data to put at 'SecretPath' location
   -> IO (Either String SecretVersion)
-putSecret vc cas sp sd =
-  (>>= version) <$> putSecretR vc cas sp sd
+putSecret vc cas sp sd = do
+  r <- putSecretR vc cas sp sd
+  return (r >>= version)
 
 deleteSecret
   :: VaultConnection
@@ -190,8 +193,9 @@ secretsList
   :: VaultConnection
   -> SecretPath
   -> IO (Either String [VaultKey])
-secretsList vc sp =
-  list <$> secretsListR vc sp
+secretsList vc sp = do
+  r <- secretsListR vc sp
+  return (r >>= list)
 
 -- | Retrieve versions history of the given secret.
 --
@@ -202,16 +206,18 @@ readSecretMetadata
   :: VaultConnection
   -> SecretPath
   -> IO (Either String SecretMetadata)
-readSecretMetadata vc sp =
-  (>>= metadata) <$> readSecretMetadataR vc sp
+readSecretMetadata vc sp = do
+  sm <- readSecretMetadataR vc sp
+  return (sm >>= metadata)
 
 -- | Get version number of the current given secret.
 currentSecretVersion
   :: VaultConnection
   -> SecretPath
   -> IO (Either String SecretVersion)
-currentSecretVersion vc sp =
-  (>>= current) <$> readSecretMetadataR vc sp
+currentSecretVersion vc sp = do
+  r <- readSecretMetadataR vc sp
+  return (r >>= current)
 
 -- Utils
 
