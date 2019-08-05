@@ -111,7 +111,7 @@ kvEngineConfig
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
 kvEngineConfig vc@VaultConnection{..} =
-  configR (concat ["POST ", show vc, "/config"]) vc
+  configR ["POST ", show vc, "/config"] vc
 
 -- | Override default secret settings for the given secret.
 secretConfig
@@ -121,7 +121,7 @@ secretConfig
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
 secretConfig vc@VaultConnection{..} SecretPath{..} =
-  configR (concat ["POST ", show vc, "/metadata/", path ]) vc
+  configR ["POST ", show vc, "/metadata/", path] vc
 
 -- | Get a secret from Vault. Give 'Just' the 'SecretVersion'
 -- to retrieve or 'Nothing' to get the current one.
@@ -160,7 +160,7 @@ deleteSecretVersions
   -> SecretVersions
   -> IO (Maybe Error)
 deleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
-  maybeError <$> secretVersionsR (concat ["POST ", show vc, "/delete/", path]) vc svs
+  maybeError <$> secretVersionsR ["POST ", show vc, "/delete/", path] vc svs
 
 unDeleteSecretVersions
   :: VaultConnection
@@ -168,7 +168,7 @@ unDeleteSecretVersions
   -> SecretVersions
   -> IO (Maybe Error)
 unDeleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
-  maybeError <$> secretVersionsR (concat ["POST ", show vc, "/undelete/", path]) vc svs
+  maybeError <$> secretVersionsR ["POST ", show vc, "/undelete/", path] vc svs
 
 -- | Permanently delete a secret, i.e. all its versions and metadata.
 destroySecret
@@ -184,7 +184,7 @@ destroySecretVersions
   -> SecretVersions
   -> IO (Either String A.Value)
 destroySecretVersions vc@VaultConnection{..} SecretPath{..} =
-  secretVersionsR (concat ["POST ", show vc, "/destroy/", path]) vc
+  secretVersionsR ["POST ", show vc, "/destroy/", path] vc
 
 -- | Get list of secrets and folders at the given location.
 secretsList

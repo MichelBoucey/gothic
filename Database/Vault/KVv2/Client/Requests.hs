@@ -25,13 +25,13 @@ import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
 
 configR
-  :: String                     -- ^ Endpoint
+  :: [String]                   -- ^ Endpoint
   ->VaultConnection
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
-configR ep VaultConnection{..} mvs casr =
-  parseRequest ep
+configR ss VaultConnection{..} mvs casr =
+  parseRequest (concat ss)
   >>= runRequest manager
     . setRequestHeaders (vaultHeaders vaultToken)
     . setRequestBodyJSON
@@ -79,12 +79,12 @@ deleteSecretR vc@VaultConnection{..} SecretPath{..} =
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
 
 secretVersionsR
-  :: String                     -- ^ Endpoint
+  :: [String]                    -- ^ Endpoint
   -> VaultConnection
   -> SecretVersions
   -> IO (Either String A.Value)
-secretVersionsR ep VaultConnection{..} vs =
-  parseRequest ep >>=
+secretVersionsR ss VaultConnection{..} vs =
+  parseRequest (concat ss) >>=
     runRequest manager
       . setRequestHeaders (vaultHeaders vaultToken)
       . setRequestBody (RequestBodyLBS $ A.encode vs)
