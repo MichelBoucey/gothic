@@ -134,7 +134,6 @@ getSecret
   -> Maybe SecretVersion
   -> IO (Either String SecretData)
 getSecret vc sp msv = do
-  -- secret <$> getSecretR vc sp msv
   r <- getSecretR vc sp msv
   return (r >>= secret)
 
