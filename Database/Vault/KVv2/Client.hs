@@ -41,7 +41,6 @@ module Database.Vault.KVv2.Client (
 
   ) where
 
-import           Control.Monad
 import qualified Data.Aeson                          as A
 import qualified Data.ByteString                     as B
 import qualified Data.ByteString.Char8               as C
@@ -134,8 +133,8 @@ getSecret
   -> SecretPath
   -> Maybe SecretVersion
   -> IO (Either String SecretData)
-getSecret vc sp msv = do
-  liftM (>>= secret) (getSecretR vc sp msv)
+getSecret vc sp msv =
+  (>>= secret) <$> getSecretR vc sp msv
 
 -- | Put 'SecretData' into Vault at the given location.
 putSecret
@@ -145,7 +144,7 @@ putSecret
   -> SecretData                       -- ^ Data to put at 'SecretPath' location
   -> IO (Either String SecretVersion)
 putSecret vc cas sp sd =
-  liftM (>>= version) (putSecretR vc cas sp sd)
+  (>>= version) <$> putSecretR vc cas sp sd
 
 deleteSecret
   :: VaultConnection
@@ -192,7 +191,7 @@ secretsList
   -> SecretPath
   -> IO (Either String [VaultKey])
 secretsList vc sp =
-  liftM (>>= list) (secretsListR vc sp)
+  (>>= list) <$> secretsListR vc sp
 
 -- | Retrieve versions history of the given secret.
 --
@@ -204,7 +203,7 @@ readSecretMetadata
   -> SecretPath
   -> IO (Either String SecretMetadata)
 readSecretMetadata vc sp =
-  liftM (>>= metadata) (readSecretMetadataR vc sp) 
+  (>>= metadata) <$> readSecretMetadataR vc sp
 
 -- | Get version number of the current given secret.
 currentSecretVersion
@@ -212,7 +211,7 @@ currentSecretVersion
   -> SecretPath
   -> IO (Either String SecretVersion)
 currentSecretVersion vc sp =
-  liftM (>>= current) (readSecretMetadataR vc sp)
+  (>>= current) <$> readSecretMetadataR vc sp
 
 -- Utils
 
