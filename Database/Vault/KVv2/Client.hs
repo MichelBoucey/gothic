@@ -144,9 +144,8 @@ putSecret
   -> SecretPath
   -> SecretData                       -- ^ Data to put at 'SecretPath' location
   -> IO (Either String SecretVersion)
-putSecret vc cas sp sd = do
-  r <- putSecretR vc cas sp sd
-  return (r >>= version)
+putSecret vc cas sp sd =
+  liftM (>>= version) (putSecretR vc cas sp sd)
 
 deleteSecret
   :: VaultConnection
