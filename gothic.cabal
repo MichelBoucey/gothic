@@ -1,5 +1,5 @@
 name:                gothic
-version:             0.1.4
+version:             0.1.5
 synopsis:            A Haskell Vault KVv2 secret engine client
 description:         A Haskell HashiCorp Vault KVv2 secret engine client library
 homepage:            https://github.com/MichelBoucey/gothic
@@ -28,14 +28,14 @@ library
 
   other-extensions:   OverloadedStrings
 
-  build-depends:      aeson                >= 0.8.0.2 && < 1.5
+  build-depends:      aeson                >= 0.8.0.2 && < 1.6
                     , base                 >= 4.8.1.0 && < 5
                     , binary               >= 0.8.5.1 && < 0.9
                     , connection           >= 0.2.8 && < 0.4
                     , exceptions           >= 0.10.0 && < 0.11
                     , hashable             >= 1.2.7.0 && < 1.4
                     , http-conduit         >= 2.3.2 && < 2.4
-                    , http-client          >= 0.5.13.1 && < 0.7
+                    , http-client          >= 0.5.13.1 && < 0.8
                     , http-client-tls      >= 0.3.5.3 && < 0.4
                     , http-types           >= 0.12.2 && < 0.13
                     , bytestring           >= 0.10.8.2 && < 0.11
