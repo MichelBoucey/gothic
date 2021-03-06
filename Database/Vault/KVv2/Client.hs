@@ -61,7 +61,7 @@ import           Database.Vault.KVv2.Client.Requests
 -- >λ: vaultConnect (Just "https://vault.local.lan:8200/") "/secret" Nothing False
 --
 vaultConnect
-  :: Maybe String                       -- ^ Use 'Just' this string as Vault address or get it from variable environment VAULT_ADDR
+  :: Maybe String                       -- ^ Use 'Just' this Vault server address, or get it from environment variable VAULT_ADDR
   -> String                             -- ^ KV engine path
   -> Maybe VaultToken                   -- ^ Use 'Just' this 'VaultToken' or get it from $HOME/.vaut-token
   -> Bool                               -- ^ Disable certificate validation
@@ -75,9 +75,7 @@ vaultConnect mva kvep mvt dcv = do
               , settingUseServerName                = True
               }
             Nothing
-  va <- case mva of
-          Just va -> return (Just va)
-          Nothing -> lookupEnv "VAULT_ADDR"
+  va <- if M.isJust mva then return mva else lookupEnv "VAULT_ADDR"
   evt <- case mvt of
            Just t  -> return (Right $ C.pack t)
            Nothing -> do
@@ -109,7 +107,7 @@ kvEngineConfig
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
-kvEngineConfig vc@VaultConnection{..} =
+kvEngineConfig vc@VaultConnection{} =
   configR ["POST ", show vc, "/config"] vc
 
 -- | Override default secret settings for the given secret.
@@ -119,7 +117,7 @@ secretConfig
   -> Int                        -- ^ Max versions
   -> Bool                       -- ^ CAS required
   -> IO (Either String A.Value)
-secretConfig vc@VaultConnection{..} SecretPath{..} =
+secretConfig vc@VaultConnection{} SecretPath{..} =
   configR ["POST ", show vc, "/metadata/", path] vc
 
 -- | Get a secret from Vault. Give 'Just' the 'SecretVersion'
@@ -158,7 +156,7 @@ deleteSecretVersions
   -> SecretPath
   -> SecretVersions
   -> IO (Maybe Error)
-deleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
+deleteSecretVersions vc@VaultConnection{} SecretPath{..} svs =
   maybeError <$> secretVersionsR ["POST ", show vc, "/delete/", path] vc svs
 
 unDeleteSecretVersions
@@ -166,7 +164,7 @@ unDeleteSecretVersions
   -> SecretPath
   -> SecretVersions
   -> IO (Maybe Error)
-unDeleteSecretVersions vc@VaultConnection{..} SecretPath{..} svs =
+unDeleteSecretVersions vc@VaultConnection{} SecretPath{..} svs =
   maybeError <$> secretVersionsR ["POST ", show vc, "/undelete/", path] vc svs
 
 -- | Permanently delete a secret, i.e. all its versions and metadata.
@@ -182,7 +180,7 @@ destroySecretVersions
   -> SecretPath
   -> SecretVersions
   -> IO (Either String A.Value)
-destroySecretVersions vc@VaultConnection{..} SecretPath{..} =
+destroySecretVersions vc@VaultConnection{} SecretPath{..} =
   secretVersionsR ["POST ", show vc, "/destroy/", path] vc
 
 -- | Get list of secrets and folders at the given location.
