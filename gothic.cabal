@@ -1,5 +1,5 @@
 name:                gothic
-version:             0.1.6
+version:             0.1.7
 synopsis:            A Haskell Vault KVv2 secret engine client
 description:         A Haskell HashiCorp Vault KVv2 secret engine client library
 homepage:            https://github.com/MichelBoucey/gothic
@@ -28,7 +28,7 @@ library
 
   other-extensions:   OverloadedStrings
 
-  build-depends:      aeson                >= 0.8.0.2 && < 1.6
+  build-depends:      aeson                >= 0.8.0.2 && < 1.6 || >= 2.0 && < 2.1
                     , base                 >= 4.8.1.0 && < 5
                     , binary               >= 0.8.5.1 && < 0.9
                     , connection           >= 0.2.8 && < 0.4
@@ -50,3 +50,4 @@ library
 
   default-language:   Haskell2010
   GHC-Options:        -Wall
+
