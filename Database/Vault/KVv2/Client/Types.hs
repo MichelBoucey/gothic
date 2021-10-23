@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE OverloadedStrings  #-}
@@ -6,7 +7,10 @@ module Database.Vault.KVv2.Client.Types where
 
 import           Control.Monad        (mzero)
 import           Data.Aeson
--- import           Data.Binary -- TODO
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Aeson.Key       as K
+import qualified Data.Aeson.KeyMap    as KM
+#endif
 import qualified Data.ByteString      as B
 import           Data.HashMap.Strict
 import           Data.Hashable
@@ -54,12 +58,20 @@ newtype SecretMetadata =
 
 instance FromJSON SecretMetadata where
   parseJSON (Object o) =
+#if MIN_VERSION_aeson(2,0,0)
+    pure (SecretMetadata . fromList $ trans <$> toList (KM.toHashMap o))
+#else
     pure (SecretMetadata . fromList $ trans <$> toList o)
+#endif
     where
     trans p =
       case p of
-        (t,j@(Object _)) -> do
-          let Right (i,_) = decimal t
+        (k,j@(Object _)) -> do
+#if MIN_VERSION_aeson(2,0,0)
+          let Right (i,_) = decimal (K.toText k)
+#else
+          let Right (i,_) = decimal k
+#endif
           let Success sv  = fromJSON j
           (SecretVersion i,sv)
         _                -> undefined
@@ -76,8 +88,6 @@ newtype SecretData =
   SecretData
     (HashMap T.Text T.Text)
     deriving (Show, Generic, ToJSON, FromJSON)
-
--- instance Binary SecretData -- TODO
 
 data SecretSettings =
   SecretSettings
