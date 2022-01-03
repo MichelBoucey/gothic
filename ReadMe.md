@@ -3,6 +3,7 @@
 
 Art. "Bank vault", Wikipedia.
 
-### Gothic, a Haskell client for Vault KV Engine v2 [![Build Status](https://travis-ci.org/MichelBoucey/gothic.svg?branch=master)](https://travis-ci.org/MichelBoucey/gothic)
+### Gothic, a Haskell client for Vault KV Engine v2 ![CI](https://github.com/MichelBoucey/gothic/actions/workflows/haskell-ci.yml/badge.svg)
 
 This library implements the [HashiCorp Vault KVv2 Engine API](https://www.vaultproject.io/api/secret/kv/kv-v2.html).
+
