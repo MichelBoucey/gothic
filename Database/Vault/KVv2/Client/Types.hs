@@ -68,13 +68,16 @@ instance FromJSON SecretMetadata where
       case p of
         (k,j@(Object _)) -> do
 #if MIN_VERSION_aeson(2,0,0)
-          let Right (i,_) = decimal (K.toText k)
+          let d = decimal (K.toText k)
 #else
-          let Right (i,_) = decimal k
+          let d = decimal k
 #endif
-          let Success sv  = fromJSON j
-          (SecretVersion i,sv)
-        _                -> undefined
+          (SecretVersion (fromDecimal d),fromSuccess $ fromJSON j)
+        _                -> error "parseJSON for SecretMetadata needs a JSON Object only"
+    fromDecimal (Right (i,_)) = i
+    fromDecimal (Left e)      = error e
+    fromSuccess (Success s)   = s
+    fromSuccess (Error e)     = error e
   parseJSON _          = mzero
 
 data Metadata =
