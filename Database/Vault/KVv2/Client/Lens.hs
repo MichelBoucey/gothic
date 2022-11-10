@@ -33,7 +33,7 @@ secret =
       A.Success sd -> Right sd
       A.Error e    -> Left e
   toSecretData A.Null         = Left "No current secret version"
-  toSecretData _              = Left "Unexpected JSON type"
+  toSecretData _              = Left "Expected JSON object"
 
 version
   :: A.Value
@@ -42,7 +42,7 @@ version =
   fromVaultResponse "version" toSecretVersion
   where
   toSecretVersion (A.Number n) = Right (SecretVersion $ toInt n)
-  toSecretVersion _            = undefined
+  toSecretVersion _            = Left "Expected JSON number"
 
 current
   :: A.Value
@@ -51,7 +51,7 @@ current =
   fromVaultResponse "current_version" toSecretVersion
   where
   toSecretVersion (A.Number n) = Right (SecretVersion $ toInt n)
-  toSecretVersion _            = undefined
+  toSecretVersion _            = Left "Expected JSON number"
 
 metadata
   :: A.Value
@@ -63,7 +63,7 @@ metadata =
     case A.fromJSON o of
       A.Success vs -> Right vs
       A.Error e    -> Left e
-  toSecretMetadata _            = undefined
+  toSecretMetadata _              = error "Expected JSON object"
 
 list
   :: A.Value
@@ -80,7 +80,7 @@ list =
              then VaultFolder s
              else VaultKey s) : ks
         lks p       _       = p
-    toListKeys _            = undefined
+    toListKeys _            = error "Expected JSON array"
  
 maybeError
   :: Either String A.Value
