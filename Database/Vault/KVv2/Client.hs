@@ -43,10 +43,10 @@ module Database.Vault.KVv2.Client (
 
 import qualified Data.Aeson                          as A
 import qualified Data.ByteString                     as B
-import qualified Data.ByteString.Char8               as C
 import           Data.HashMap.Strict
 import qualified Data.Maybe                          as M
-import           Data.Text                           hiding (concat)
+import           Data.Text                           as T
+import           Data.Text.Encoding
 import           Network.Connection 
 import           Network.HTTP.Client.TLS
 import           System.Environment                  (lookupEnv)
@@ -61,10 +61,10 @@ import           Database.Vault.KVv2.Client.Requests
 -- >λ: vaultConnect (Just "https://vault.local.lan:8200/") "/secret" Nothing False
 --
 vaultConnect
-  :: Maybe String                       -- ^ Use 'Just' this Vault server address, or get it from environment variable VAULT_ADDR
-  -> String                             -- ^ KV engine path
+  :: Maybe VaultAddr                    -- ^ Use 'Just' this Vault server address, or get it from environment variable VAULT_ADDR
+  -> KVEnginePath                       -- ^ KV engine path
   -> Maybe VaultToken                   -- ^ Use 'Just' this 'VaultToken' or get it from $HOME/.vaut-token
-  -> Bool                               -- ^ Disable certificate validation
+  -> DisableCertValidation              -- ^ Disable certificate validation
   -> IO (Either String VaultConnection)
 vaultConnect mva kvep mvt dcv = do
   nm <- newTlsManagerWith $
@@ -75,9 +75,11 @@ vaultConnect mva kvep mvt dcv = do
               , settingUseServerName                = True
               }
             Nothing
-  va <- if M.isJust mva then return mva else lookupEnv "VAULT_ADDR"
+  va <- if M.isJust mva
+          then return mva
+          else lookupEnv "VAULT_ADDR"
   evt <- case mvt of
-           Just t  -> return (Right $ C.pack t)
+           Just t  -> pure (Right $ encodeUtf8 $ T.pack t)
            Nothing -> do
              hm <- lookupEnv "HOME"
              if M.isJust hm
@@ -88,9 +90,9 @@ vaultConnect mva kvep mvt dcv = do
                      fe <- fileExist fp
                      if fe 
                        then Right <$> B.readFile fp
-                       else return (Left $ "No Vault token file found at " ++ fp)
-                   else return (Left "Variable environment VAULT_ADDR not set")
-               else return (Left "Variable environment HOME not set")
+                       else pure (Left $ "No Vault token file found at " ++ fp)
+                   else pure (Left "Variable environment VAULT_ADDR not set")
+               else pure (Left "Variable environment HOME not set")
   pure $
     (\vt ->
       VaultConnection

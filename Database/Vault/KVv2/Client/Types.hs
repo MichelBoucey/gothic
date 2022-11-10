@@ -14,22 +14,28 @@ import qualified Data.Aeson.KeyMap    as KM
 import qualified Data.ByteString      as B
 import           Data.HashMap.Strict
 import           Data.Hashable
-import           Data.Scientific
 import qualified Data.Text            as T
 import           Data.Text.Read       (decimal)
 import           GHC.Generics
 import           Network.HTTP.Client  (Manager)
+import           Text.Read            (readMaybe)
 
 import           Database.Vault.KVv2.Client.Internal
+
+type VaultAddr = String
 
 type VaultToken = String
 
 type Error = String
 
+type KVEnginePath = String
+
+type DisableCertValidation =Bool
+
 data VaultConnection =
   VaultConnection
-    { vaultAddr    :: !String
-    , kvEnginePath :: !String
+    { vaultAddr    :: !VaultAddr
+    , kvEnginePath :: !KVEnginePath
     , vaultToken   :: !B.ByteString
     , manager      :: !Manager
     }
@@ -73,7 +79,7 @@ instance FromJSON SecretMetadata where
           let d = decimal k
 #endif
           (SecretVersion (fromDecimal d),fromSuccess $ fromJSON j)
-        _                -> error "parseJSON for SecretMetadata needs a JSON Object only"
+        _anyOther        -> error "Expected JSON Object"
     fromDecimal (Right (i,_)) = i
     fromDecimal (Left e)      = error e
     fromSuccess (Success s)   = s
@@ -94,8 +100,8 @@ newtype SecretData =
 
 data SecretSettings =
   SecretSettings
-    { max_versions :: Int
-    , cas_required :: Bool
+    { max_versions :: !Int
+    , cas_required :: !Bool
     } deriving (Show, Generic, ToJSON, FromJSON)
     
 newtype SecretPath =
@@ -118,12 +124,14 @@ instance ToJSON PutSecretOptions where
   toJSON PutSecretOptions { cas = WriteAllowed } = object []
   toJSON PutSecretOptions { cas = CreateOnly }   = object [ "cas" .= Number 0.0 ]
   toJSON PutSecretOptions { cas = CurrentVersion v } =
-    object [ "cas" .= Number (read (show v) :: Scientific) ]
+    case readMaybe (show v) of
+      Just s  -> object [ "cas" .= Number s ]
+      Nothing -> error "Expected type Int"
 
 data PutSecretRequestBody =
   PutSecretRequestBody
-    { options  :: PutSecretOptions
-    , put_data :: SecretData
+    { options  :: !PutSecretOptions
+    , put_data :: !SecretData
     }
 
 instance ToJSON PutSecretRequestBody where
