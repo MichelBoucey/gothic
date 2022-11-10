@@ -10,6 +10,7 @@ import           Data.Aeson.Lens
 import qualified Data.Maybe                as M
 import           Data.Scientific
 import           Data.List                 as L
+import           Data.List.NonEmpty        as N
 import           Data.Text                 as T
 import           Network.HTTP.Client
 import           Network.HTTP.Types.Header
@@ -67,15 +68,15 @@ jsonErrors v =
               L.intercalate
                 ", "
                 (toString <$> V.toList a) ++ "."
-        _         -> "Unexpected JSON type"
+        _anyOther -> "Expected JSON array"
     Nothing -> expectedJSONField "errors"
 
 toString :: A.Value -> String
 toString (A.String s) = T.unpack s
-toString _            = fail "Expecting JSON type String only"
+toString _            = fail "Expected JSON String"
 
 expectedJSONField :: String -> String
-expectedJSONField f = "Expected JSON field not found: " ++ f
+expectedJSONField = (++) "Expected JSON field not found: "
 
 unexpectedJSONType :: Either String b
 unexpectedJSONType = Left "Unexpected JSON type"
@@ -84,19 +85,21 @@ toInt :: Scientific -> Int
 toInt = M.fromJust . toBoundedInteger
 
 hasTrailingSlash :: String -> Bool
-hasTrailingSlash s = s /= mempty && L.last s == '/'
+hasTrailingSlash s = N.last (N.fromList s) == '/'
 
 removeTrailingSlash :: String -> String
 removeTrailingSlash s =
   if hasTrailingSlash s
-    then L.init s
+    then N.init (N.fromList s)
     else s
 
 hasLeadingSlash :: String -> Bool
-hasLeadingSlash s = s /= mempty && L.head s == '/'
+-- hasLeadingSlash s = N.head (N.fromList s) == '/'
+hasLeadingSlash s = N.head (N.fromList s) == '/'
 
 removeLeadingSlash :: String -> String
 removeLeadingSlash s =
   if hasLeadingSlash s
-    then L.tail s
+    then N.tail (N.fromList s)
     else s
+
