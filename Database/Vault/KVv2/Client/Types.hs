@@ -1,24 +1,24 @@
-{-# LANGUAGE CPP                #-}
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Database.Vault.KVv2.Client.Types where
 
-import           Control.Monad        (mzero)
+import           Control.Monad                       (mzero)
 import           Data.Aeson
 #if MIN_VERSION_aeson(2,0,0)
-import qualified Data.Aeson.Key       as K
-import qualified Data.Aeson.KeyMap    as KM
+import qualified Data.Aeson.Key                      as K
+import qualified Data.Aeson.KeyMap                   as KM
 #endif
-import qualified Data.ByteString      as B
-import           Data.HashMap.Strict
+import qualified Data.ByteString                     as B
 import           Data.Hashable
-import qualified Data.Text            as T
-import           Data.Text.Read       (decimal)
+import           Data.HashMap.Strict
+import qualified Data.Text                           as T
+import           Data.Text.Read                      (decimal)
 import           GHC.Generics
-import           Network.HTTP.Client  (Manager)
-import           Text.Read            (readMaybe)
+import           Network.HTTP.Client                 (Manager)
+import           Text.Read                           (readMaybe)
 
 import           Database.Vault.KVv2.Client.Internal
 
@@ -82,12 +82,12 @@ instance FromJSON SecretMetadata where
         _anyOther        -> error "Expected JSON Object"
     fromDecimal (Right (i,_)) = i
     fromDecimal (Left e)      = error e
-    fromSuccess (Success s)   = s
-    fromSuccess (Error e)     = error e
+    fromSuccess (Success s) = s
+    fromSuccess (Error e)   = error e
   parseJSON _          = mzero
 
 data Metadata =
-  Metadata 
+  Metadata
     { destroyed     :: !Bool
     , deletion_time :: !T.Text
     , created_time  :: !T.Text
@@ -103,7 +103,7 @@ data SecretSettings =
     { max_versions :: !Int
     , cas_required :: !Bool
     } deriving (Show, Generic, ToJSON, FromJSON)
-    
+
 newtype SecretPath =
   SecretPath
     { path :: String }
@@ -144,5 +144,5 @@ instance ToJSON PutSecretRequestBody where
 data VaultKey
   = VaultKey    !String
   | VaultFolder !String
-  deriving (Show) 
+  deriving (Show)
 

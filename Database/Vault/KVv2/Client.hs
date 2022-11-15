@@ -13,21 +13,21 @@ module Database.Vault.KVv2.Client (
     vaultConnect,
     kvEngineConfig,
     secretConfig,
-  
+
     -- * Basic operations
 
     putSecret,
     getSecret,
-  
+
     -- * Soft secret deletion
     deleteSecret,
     deleteSecretVersions,
     unDeleteSecretVersions,
-  
+
     -- * Permanent secret deletion
     destroySecret,
     destroySecretVersions,
-  
+
     -- * Get informations
 
     currentSecretVersion,
@@ -47,14 +47,14 @@ import           Data.HashMap.Strict
 import qualified Data.Maybe                          as M
 import           Data.Text                           as T
 import           Data.Text.Encoding
-import           Network.Connection 
+import           Network.Connection
 import           Network.HTTP.Client.TLS
 import           System.Environment                  (lookupEnv)
 import           System.Posix.Files                  (fileExist)
 
-import           Database.Vault.KVv2.Client.Types
 import           Database.Vault.KVv2.Client.Lens
 import           Database.Vault.KVv2.Client.Requests
+import           Database.Vault.KVv2.Client.Types
 
 -- | Get a 'VaultConnection', or an error message.
 --
@@ -88,7 +88,7 @@ vaultConnect mva kvep mvt dcv = do
                  if M.isJust va
                    then do
                      fe <- fileExist fp
-                     if fe 
+                     if fe
                        then Right <$> B.readFile fp
                        else pure (Left $ "No Vault token file found at " ++ fp)
                    else pure (Left "Variable environment VAULT_ADDR not set")
@@ -195,7 +195,7 @@ secretsList vc sp =
 
 -- | Retrieve versions history of the given secret.
 --
--- >λ: readSecretMetadata conn (SecretPath "MySecret") 
+-- >λ: readSecretMetadata conn (SecretPath "MySecret")
 -- >Right (SecretMetadata (fromList [(SecretVersion 1,Metadata {destroyed = True, deletion_time = "", created_time = "2019-05-30T13:22:58.416399224Z"}),(SecretVersion 2,Metadata {destroyed = True, deletion_time = "2019-06-29T15:28:46.145302138Z"})]))
 --
 readSecretMetadata

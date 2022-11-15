@@ -4,17 +4,17 @@ module Database.Vault.KVv2.Client.Internal where
 
 import           Control.Lens
 import           Control.Monad.Catch
-import qualified Data.ByteString           as B
 import qualified Data.Aeson                as A
 import           Data.Aeson.Lens
-import qualified Data.Maybe                as M
-import           Data.Scientific
+import qualified Data.ByteString           as B
 import           Data.List                 as L
 import           Data.List.NonEmpty        as N
+import qualified Data.Maybe                as M
+import           Data.Scientific
 import           Data.Text                 as T
+import qualified Data.Vector               as V
 import           Network.HTTP.Client
 import           Network.HTTP.Types.Header
-import qualified Data.Vector               as V
 
 runRequest
   :: Manager

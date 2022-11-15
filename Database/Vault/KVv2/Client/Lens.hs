@@ -81,7 +81,7 @@ list =
              else VaultKey s) : ks
         lks p       _       = p
     toListKeys _            = error "Expected JSON array"
- 
+
 maybeError
   :: Either String A.Value
   -> Maybe Error
@@ -91,4 +91,4 @@ maybeError (Right v) =
     Just A.Null -> Nothing
     Just _      -> Just "Unexpected JSON type"
     Nothing     -> Just (jsonErrors v)
-  
+

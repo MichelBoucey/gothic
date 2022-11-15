@@ -16,10 +16,9 @@ module Database.Vault.KVv2.Client.Requests (
 
 import qualified Data.Aeson                          as A
 import           Network.HTTP.Client
-import           Network.HTTP.Simple                 ( setRequestBody
-                                                     , setRequestHeaders
-                                                     , setRequestBodyJSON
-                                                     )
+import           Network.HTTP.Simple                 (setRequestBody,
+                                                      setRequestBodyJSON,
+                                                      setRequestHeaders)
 
 import           Database.Vault.KVv2.Client.Internal
 import           Database.Vault.KVv2.Client.Types
@@ -50,8 +49,8 @@ getSecretR vc@VaultConnection{..} SecretPath{..} msv =
     (concat [show vc, "/data/", path, queryString msv])
   >>= runRequest manager . setRequestHeaders (vaultHeaders vaultToken)
   where
-  queryString = maybe "" (\(SecretVersion v) -> "?version=" ++ show v) 
-  
+  queryString = maybe "" (\(SecretVersion v) -> "?version=" ++ show v)
+
 putSecretR
   :: VaultConnection
   -> CheckAndSet
