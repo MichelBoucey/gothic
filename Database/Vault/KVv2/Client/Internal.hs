@@ -5,6 +5,7 @@ module Database.Vault.KVv2.Client.Internal where
 import           Control.Lens
 import           Control.Monad.Catch
 import qualified Data.Aeson                as A
+import           Data.Aeson.Key            (fromText)
 import           Data.Aeson.Lens
 import qualified Data.ByteString           as B
 import           Data.List                 as L
@@ -35,7 +36,7 @@ fromVaultResponse
   -> A.Value
   -> Either String a
 fromVaultResponse k f v =
-  case v ^? key "data" . key k of
+  case v ^? key "data" . key (fromText k) of
     Just o@(A.Object _) -> f o
     Just n@(A.Number _) -> f n
     Just a@(A.Array  _) -> f a
