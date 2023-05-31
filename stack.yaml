@@ -18,7 +18,7 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/5.yaml
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/23.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -41,7 +41,6 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 # extra-deps: []
-extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
@@ -50,20 +49,19 @@ extra-deps: []
 # extra-package-dbs: []
 
 # Control whether we use the GHC we find on the path
-# system-ghc: true
+system-ghc: true
 #
-# Require a specific version of stack, using version ranges
+# Require a specific version of Stack, using version ranges
 # require-stack-version: -any # Default
-# require-stack-version: ">=2.5"
+# require-stack-version: ">=2.11"
 #
-# Override the architecture used by stack, especially useful on Windows
+# Override the architecture used by Stack, especially useful on Windows
 # arch: i386
 # arch: x86_64
 #
-# Extra directories used by stack for building
+# Extra directories used by Stack for building
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
-pvp-bounds: both
