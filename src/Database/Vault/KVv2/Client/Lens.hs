@@ -1,6 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE ExplicitForAll    #-}
--- {-# LANGUAGE RankNTypes #-}
 
 module Database.Vault.KVv2.Client.Lens (
 
