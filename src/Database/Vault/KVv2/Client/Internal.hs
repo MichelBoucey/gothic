@@ -12,7 +12,7 @@ import           Data.List                 as L
 import           Data.List.NonEmpty        as N
 import qualified Data.Maybe                as M
 import           Data.Scientific
-import           Data.Text                 as T
+import           Data.Text                 as T hiding (show)
 import qualified Data.Vector               as V
 import           Network.HTTP.Client
 import           Network.HTTP.Types.Header

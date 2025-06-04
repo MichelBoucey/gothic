@@ -45,7 +45,7 @@ import qualified Data.Aeson                          as A
 import qualified Data.ByteString                     as B
 import           Data.HashMap.Strict
 import qualified Data.Maybe                          as M
-import           Data.Text                           as T
+import           Data.Text                           as T hiding (show)
 import           Data.Text.Encoding
 import           Network.Connection
 import           Network.HTTP.Client.TLS
