@@ -47,8 +47,9 @@ import           Data.HashMap.Strict
 import qualified Data.Maybe                          as M
 import           Data.Text                           as T hiding (show)
 import           Data.Text.Encoding
-import           Network.Connection
+import           Network.Connection                  (TLSSettings (..))
 import           Network.HTTP.Client.TLS
+import           Network.TLS                         (defaultSupported)
 import           System.Environment                  (lookupEnv)
 import           System.Posix.Files                  (fileExist)
 
@@ -73,6 +74,7 @@ vaultConnect mva kvep mvt dcv = do
               { settingDisableCertificateValidation = dcv
               , settingDisableSession               = False
               , settingUseServerName                = True
+              , settingClientSupported              = defaultSupported
               }
             Nothing
   va <- if M.isJust mva
