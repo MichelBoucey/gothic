@@ -6,3 +6,25 @@ Art. "Bank vault", Wikipedia.
 
 This library implements the [HashiCorp Vault KVv2 Engine API](https://www.vaultproject.io/api/secret/kv/kv-v2.html).
 
+## Building
+
+### With Nix Flake (Recommended)
+
+```bash
+# Build the project
+nix build
+
+# Enter development shell
+nix develop
+
+# Or use direnv for automatic environment activation
+echo "use flake" > .envrc && direnv allow
+```
+
+See [NIX_MIGRATION.md](NIX_MIGRATION.md) for detailed Nix Flake usage.
+
+### With Stack
+
+```bash
+stack build
+```

@@ -4,4 +4,9 @@ dist
 cabal.sandbox.config
 .stack-work
 stack.yaml.lock
-dist-newstyle 
+dist-newstyle
+
+# Nix
+result
+result-*
+.direnv
