@@ -1,5 +1,5 @@
 name:                gothic
-version:             0.1.8.3
+version:             0.1.8.4
 synopsis:            A Haskell Vault KVv2 secret engine client
 description:         A Haskell HashiCorp Vault KVv2 secret engine client library
 homepage:            https://github.com/MichelBoucey/gothic
@@ -13,7 +13,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  ReadMe.md
 
-Tested-With:
+tested-With:
   GHC ==8.8.4
    || ==8.10.7
    || ==9.0.2
@@ -25,7 +25,7 @@ Tested-With:
    || ==9.12.2
    || ==9.14.1
 
-Source-Repository head
+source-Repository head
   Type: git
   Location: https://github.com/MichelBoucey/gothic
 
@@ -36,7 +36,9 @@ library
                     , Database.Vault.KVv2.Client.Lens
                     , Database.Vault.KVv2.Client.Requests
                     , Database.Vault.KVv2.Client.Types
+
   other-extensions:   OverloadedStrings
+
   build-depends:      aeson                >= 2.0 && < 2.3
                     , base                 >= 4.8.1.0 && < 5
                     , crypton-connection   >= 0.4.0 && < 0.5
