@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.19.20260209
+# version: 0.19.20260331
 #
-# REGENDATA ("0.19.20260209",["github","gothic.cabal"])
+# REGENDATA ("0.19.20260331",["github","gothic.cabal"])
 #
 name: Haskell-CI
 on:
@@ -30,9 +30,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - compiler: ghc-9.12.2
+          - compiler: ghc-9.12.4
             compilerKind: ghc
-            compilerVersion: 9.12.2
+            compilerVersion: 9.12.4
             setup-method: ghcup
             allow-failure: false
           - compiler: ghc-9.10.3
