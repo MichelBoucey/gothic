@@ -6,3 +6,5 @@ Art. "Bank vault", Wikipedia.
 
 This library implements the [HashiCorp Vault KVv2 Engine API](https://www.vaultproject.io/api/secret/kv/kv-v2.html).
 
+Latest successfully tested `Hashicorp Vault` version: `2.0.4`.
+
