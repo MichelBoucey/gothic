@@ -16,11 +16,9 @@ import           Data.Hashable
 import           Data.HashMap.Strict
 import qualified Data.Text                           as T
 import           Data.Text.Read                      (decimal)
+import           Database.Vault.KVv2.Client.Internal
 import           GHC.Generics
 import           Network.HTTP.Client                 (Manager)
-import           Text.Read                           (readMaybe)
-
-import           Database.Vault.KVv2.Client.Internal
 
 type VaultAddr = String
 
@@ -30,7 +28,7 @@ type Error = String
 
 type KVEnginePath = String
 
-type DisableCertValidation =Bool
+type DisableCertValidation = Bool
 
 data VaultConnection =
   VaultConnection
@@ -96,7 +94,7 @@ data Metadata =
 newtype SecretData =
   SecretData
     (HashMap T.Text T.Text)
-    deriving (Show, Generic, ToJSON, FromJSON)
+    deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data SecretSettings =
   SecretSettings
@@ -124,9 +122,7 @@ instance ToJSON PutSecretOptions where
   toJSON PutSecretOptions { cas = WriteAllowed } = object []
   toJSON PutSecretOptions { cas = CreateOnly }   = object [ "cas" .= Number 0.0 ]
   toJSON PutSecretOptions { cas = CurrentVersion v } =
-    case readMaybe (show v) of
-      Just s  -> object [ "cas" .= Number s ]
-      Nothing -> error "Expected type Int"
+    object [ "cas" .= Number (fromIntegral v) ]
 
 data PutSecretRequestBody =
   PutSecretRequestBody
@@ -144,5 +140,5 @@ instance ToJSON PutSecretRequestBody where
 data VaultKey
   = VaultKey    !String
   | VaultFolder !String
-  deriving (Show)
+  deriving (Show, Eq)
 

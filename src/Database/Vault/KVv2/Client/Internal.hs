@@ -4,18 +4,18 @@ module Database.Vault.KVv2.Client.Internal where
 
 import           Control.Lens
 import           Control.Monad.Catch
-import qualified Data.Aeson                as A
-import           Data.Aeson.Key            (fromText)
+import qualified Data.Aeson          as A
+import           Data.Aeson.Key      (fromText)
 import           Data.Aeson.Lens
-import qualified Data.ByteString           as B
-import           Data.List                 as L
-import           Data.List.NonEmpty        as N
-import qualified Data.Maybe                as M
+import qualified Data.ByteString     as B
+import           Data.List           as L
+import           Data.List.NonEmpty  as N
+import qualified Data.Maybe          as M
 import           Data.Scientific
-import           Data.Text                 as T hiding (show)
-import qualified Data.Vector               as V
+import           Data.Text           as T hiding (show)
+import qualified Data.Vector         as V
 import           Network.HTTP.Client
-import           Network.HTTP.Types.Header
+import           Network.HTTP.Types
 
 runRequest
   :: Manager
@@ -27,7 +27,11 @@ runRequest m r =
   esv t =
     case t of
       Right b ->
-        pure (M.fromMaybe A.Null $ A.decode $ responseBody b)
+        let sc = statusCode (responseStatus b)
+            ebody = M.fromMaybe A.Null $ A.decode $ responseBody b
+        in if sc >= 200 && sc < 300
+           then pure ebody
+           else Left $ jsonErrors ebody
       Left  e -> Left $ show (e::SomeException)
 
 fromVaultResponse
@@ -63,7 +67,7 @@ jsonErrors v =
     Just ja ->
       case ja of
         A.Array a ->
-          if a == mempty
+          if V.null a
             then "Undetermined error"
             else
               L.intercalate
@@ -83,7 +87,7 @@ unexpectedJSONType :: Either String b
 unexpectedJSONType = Left "Unexpected JSON type"
 
 toInt :: Scientific -> Int
-toInt = M.fromJust . toBoundedInteger
+toInt = M.fromMaybe 0 . toBoundedInteger
 
 hasTrailingSlash :: String -> Bool
 hasTrailingSlash s = N.last (N.fromList s) == '/'
@@ -95,7 +99,6 @@ removeTrailingSlash s =
     else s
 
 hasLeadingSlash :: String -> Bool
--- hasLeadingSlash s = N.head (N.fromList s) == '/'
 hasLeadingSlash s = N.head (N.fromList s) == '/'
 
 removeLeadingSlash :: String -> String

@@ -5,15 +5,12 @@ module Database.Vault.KVv2.Client.Lens (
     current,
     list,
     metadata,
-    maybeError,
     secret,
     version
 
   ) where
 
-import           Control.Lens
 import qualified Data.Aeson                          as A
-import           Data.Aeson.Lens
 import qualified Data.Text                           as T
 import qualified Data.Vector                         as V
 
@@ -61,7 +58,7 @@ metadata =
     case A.fromJSON o of
       A.Success vs -> Right vs
       A.Error e    -> Left e
-  toSecretMetadata _              = error "Expected JSON object"
+  toSecretMetadata _              = Left "Expected JSON object"
 
 list
   :: A.Value
@@ -78,15 +75,5 @@ list =
              then VaultFolder s
              else VaultKey s) : ks
         lks p       _       = p
-    toListKeys _            = error "Expected JSON array"
-
-maybeError
-  :: Either String A.Value
-  -> Maybe Error
-maybeError (Left s)  = Just s
-maybeError (Right v) =
-  case v ^? key "data" . key "version" of
-    Just A.Null -> Nothing
-    Just _      -> Just "Unexpected JSON type"
-    Nothing     -> Just (jsonErrors v)
+    toListKeys _            = Left "Expected JSON array"
 
