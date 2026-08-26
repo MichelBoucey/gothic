@@ -1,7 +1,7 @@
 cabal-version:      >=1.10
 name:               gothic
 version:            0.2.0.0
-license:            BSD3
+license:            GPL
 license-file:       LICENSE
 copyright:          (c) 2019-2026 - Michel Boucey
 maintainer:         michel.boucey@gmail.com
