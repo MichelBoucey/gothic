@@ -44,7 +44,7 @@ module Database.Vault.KVv2.Client (
 import qualified Data.Aeson                          as A
 import qualified Data.ByteString                     as B
 import           Data.HashMap.Strict
-import qualified Data.Maybe                          as M
+import           Data.Maybe                          (fromMaybe)
 import           Data.Text                           as T hiding (show)
 import           Data.Text.Encoding
 import           Network.Connection                  (TLSSettings (..))
@@ -64,7 +64,7 @@ import           Database.Vault.KVv2.Client.Types
 vaultConnect
   :: Maybe VaultAddr                    -- ^ Use 'Just' this Vault server address, or get it from environment variable VAULT_ADDR
   -> KVEnginePath                       -- ^ KV engine path
-  -> Maybe VaultToken                   -- ^ Use 'Just' this 'VaultToken' or get it from $HOME/.vaut-token
+  -> Maybe VaultToken                   -- ^ Use 'Just' this 'VaultToken' or get it from $HOME/.vault-token
   -> DisableCertValidation              -- ^ Disable certificate validation
   -> IO (Either String VaultConnection)
 vaultConnect mva kvep mvt dcv = do
@@ -77,28 +77,27 @@ vaultConnect mva kvep mvt dcv = do
               , settingClientSupported              = defaultSupported
               }
             Nothing
-  va <- if M.isJust mva
-          then return mva
-          else lookupEnv "VAULT_ADDR"
+  va <- case mva of
+          Just _  -> return mva
+          Nothing -> lookupEnv "VAULT_ADDR"
   evt <- case mvt of
-           Just t  -> pure (Right $ encodeUtf8 $ T.pack t)
-           Nothing -> do
-             hm <- lookupEnv "HOME"
-             if M.isJust hm
-               then do
-                 let fp = M.fromJust hm ++ "/.vault-token"
-                 if M.isJust va
-                   then do
-                     fe <- fileExist fp
-                     if fe
-                       then Right <$> B.readFile fp
-                       else pure (Left $ "No Vault token file found at " ++ fp)
-                   else pure (Left "Variable environment VAULT_ADDR not set")
-               else pure (Left "Variable environment HOME not set")
+    Just t  -> pure (Right $ encodeUtf8 $ T.pack t)
+    Nothing -> case va of
+      Nothing -> pure (Left "Variable environment VAULT_ADDR not set")
+      Just _  -> do
+        hm <- lookupEnv "HOME"
+        case hm of
+          Nothing -> pure (Left "Variable environment HOME not set")
+          Just h  -> do
+            let fp = h ++ "/.vault-token"
+            fe <- fileExist fp
+            if fe
+              then Right <$> B.readFile fp
+              else pure (Left $ "No Vault token file found at " ++ fp)
   pure $
     (\vt ->
       VaultConnection
-        { vaultAddr    = M.fromJust va
+        { vaultAddr    = fromMaybe "" va
         , vaultToken   = vt
         , kvEnginePath = kvep
         , manager      = nm
@@ -151,33 +150,33 @@ putSecret vc cas sp sd =
 deleteSecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Maybe Error)
+  -> IO (Either String A.Value)
 deleteSecret vc sp =
-  maybeError <$> deleteSecretR vc sp
+  deleteSecretR vc sp
 
 deleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Maybe Error)
+  -> IO (Either String A.Value)
 deleteSecretVersions vc@VaultConnection{} SecretPath{..} svs =
-  maybeError <$> secretVersionsR ["POST ", show vc, "/delete/", path] vc svs
+  secretVersionsR ["POST ", show vc, "/delete/", path] vc svs
 
 unDeleteSecretVersions
   :: VaultConnection
   -> SecretPath
   -> SecretVersions
-  -> IO (Maybe Error)
+  -> IO (Either String A.Value)
 unDeleteSecretVersions vc@VaultConnection{} SecretPath{..} svs =
-  maybeError <$> secretVersionsR ["POST ", show vc, "/undelete/", path] vc svs
+  secretVersionsR ["POST ", show vc, "/undelete/", path] vc svs
 
 -- | Permanently delete a secret, i.e. all its versions and metadata.
 destroySecret
   :: VaultConnection
   -> SecretPath
-  -> IO (Maybe Error)
+  -> IO (Either String A.Value)
 destroySecret vc sp =
-  maybeError <$> destroySecretR vc sp
+  destroySecretR vc sp
 
 destroySecretVersions
   :: VaultConnection
